@@ -1,23 +1,17 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desafio Logístico: Operação Canalização & Manga</title>
+    <title>Tetris do Estoque</title>
     <style>
         :root {
-            --bg-color: #0d1117;
-            --panel-bg: #161b22;
-            --border-color: #30363d;
-            --accent: #ff6600; /* Laranja estilo DHL/Logística */
-            --accent-hover: #e55b00;
-            --success: #238636;
-            --danger: #da3633;
-            --text: #f0f6fc;
-            --text-muted: #8b949e;
-            --hend: #1f6feb; /* Azul do Hend / Scanner */
-            --rend: #a371f7; /* Roxo do Rend / Leitor */
+            --bg-color: #0f172a;
+            --panel-color: #1e293b;
+            --accent-color: #38bdf8;
+            --text-color: #f8fafc;
+            --box-color: #f59e0b;
+            --box-hover: #fbbf24;
         }
 
         * {
@@ -25,640 +19,334 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
         }
 
         body {
             background-color: var(--bg-color);
-            color: var(--text);
-            min-height: 100vh;
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 10px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 700px;
-            background-color: var(--panel-bg);
-            border-radius: 12px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+            min-height: 100vh;
+            padding: 20px;
         }
 
         header {
-            padding: 15px 20px;
             text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            background: #21262d;
+            margin-bottom: 20px;
         }
 
-        h1 {
-            font-size: 1.3rem;
-            color: var(--accent);
-            margin-bottom: 3px;
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 5px;
         }
 
-        .subtitle {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        header p {
+            font-size: 0.9rem;
+            color: #94a3b8;
         }
 
-        .screen {
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                flex-direction: row;
+                align-items: flex-start;
+                max-width: 900px;
+            }
+        }
+
+        .sidebar {
+            background-color: var(--panel-color);
             padding: 20px;
+            border-radius: 12px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .warehouse {
+            background-color: var(--panel-color);
+            padding: 20px;
+            border-radius: 12px;
+            flex: 2;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 440px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .hidden {
-            display: none !important;
-        }
-
-        /* Botões Gerais */
-        .btn {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
+        .stats {
+            display: flex;
+            justify-content: space-between;
             font-size: 1rem;
             font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            width: 100%;
-            max-width: 260px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
-        .btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            background-color: #30363d;
-        }
-        .btn-secondary:hover {
-            background-color: #484f58;
-        }
-
-        /* Painel de Jogo Operacional */
-        .ops-header {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            background: #21262d;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Status do Scanner (Mecânica Central) */
-        .scanner-status-box {
-            width: 100%;
-            background: #21262d;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            text-align: center;
-        }
-
-        .step-indicators {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .step-badge {
-            flex: 1;
-            padding: 6px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            background: #30363d;
-            color: var(--text-muted);
-            border: 1px solid transparent;
-        }
-
-        .step-badge.active {
-            border-color: var(--accent);
-            color: var(--text);
-            background: rgba(255, 102, 0, 0.15);
-        }
-
-        .step-badge.done {
-            background: var(--success);
-            color: white;
-        }
-
-        /* Área da Caixa / Volume na Esteira */
-        .cargo-bay {
-            width: 100%;
-            background: #0d1117;
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            height: 130px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            position: relative;
-        }
-
-        .cargo-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .cargo-id {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-family: monospace;
-        }
-
-        .cargo-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--text);
-        }
-
-        .cargo-dest-tag {
-            background: #30363d;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            width: fit-content;
-            font-weight: bold;
-        }
-
-        /* Ações de Bipagem */
-        .scanning-panel {
+        .queue-area {
             display: flex;
             gap: 10px;
-            width: 100%;
-        }
-
-        .scan-btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            display: flex;
-            flex-direction: column;
+            overflow-x: auto;
+            padding: 10px 0;
+            min-height: 100px;
             align-items: center;
-            gap: 4px;
-            transition: transform 0.1s, opacity 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            justify-content: center;
         }
 
-        .scan-btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-rend { background-color: var(--rend); }
-        .btn-hend { background-color: var(--hend); }
-
-        .scan-btn span {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-
-        /* Grade de Canalizações / Mangas */
-        .chutes-grid {
+        /* Grid do Estoque */
+        #grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            width: 100%;
-        }
-
-        .chute-btn {
-            background: #21262d;
-            border: 2px solid var(--border-color);
+            grid-template-columns: repeat(10, 35px);
+            grid-template-rows: repeat(10, 35px);
+            gap: 2px;
+            background-color: #334155;
+            padding: 4px;
             border-radius: 8px;
-            padding: 12px 5px;
-            color: var(--text);
+        }
+
+        .cell {
+            background-color: #1e293b;
+            width: 35px;
+            height: 35px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .cell.occupied {
+            background-color: var(--box-color);
+        }
+
+        .cell.highlight {
+            background-color: rgba(56, 189, 248, 0.4);
+        }
+
+        /* Caixa arrastável / selecionável */
+        .box-item {
+            background-color: var(--box-color);
+            color: #000;
             font-weight: bold;
-            cursor: pointer;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 4px;
-            transition: all 0.15s;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
         }
 
-        .chute-btn:hover {
-            border-color: var(--accent);
-            background: #30363d;
-        }
-
-        .chute-btn:active {
+        .box-item:active {
+            cursor: grabbing;
             transform: scale(0.95);
         }
 
-        .chute-code {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            font-family: monospace;
-        }
-
-        .chute-name {
-            font-size: 0.8rem;
-        }
-
-        /* Barra de Tempo Operacional */
-        .timer-container {
-            width: 100%;
-            height: 6px;
-            background: #30363d;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .timer-fill {
-            height: 100%;
-            background: var(--success);
-            width: 100%;
-            transition: width 0.1s linear, background-color 0.3s;
-        }
-
-        .stats-box {
-            background: #21262d;
-            padding: 12px;
-            border-radius: 8px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        .controls-hint {
+            font-size: 0.85rem;
+            color: #94a3b8;
             text-align: center;
-            border: 1px solid var(--border-color);
+            margin-top: 10px;
         }
 
-        .adsense-container {
-            width: 100%;
-            background: #0d1117;
-            border: 1px dashed #30363d;
-            padding: 8px;
-            text-align: center;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        button {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: filter 0.2s;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                max-width: 100%;
-                min-height: 100vh;
-                border-radius: 0;
-                border: none;
-            }
+        button:hover {
+            filter: brightness(1.1);
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>📦 Operação Logística: Canal & Manga</h1>
-            <div class="subtitle">Bipagem de Cargas • Rend ➔ Hend ➔ Manga</div>
-        </header>
+    <header>
+        <h1>📦 Tetris do Estoque</h1>
+        <p>Organize o armazém com eficiência e velocidade!</p>
+    </header>
 
-        <!-- MENU INICIAL -->
-        <div id="menu-screen" class="screen">
-            <div style="text-align: center; width: 100%;">
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Selecione o Turno / Ritmo:</p>
-                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px;">
-                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer;" onclick="setDifficulty('easy', this)">Normal (6s)</button>
-                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer; background: #30363d;" onclick="setDifficulty('medium', this)">Intenso (4.5s)</button>
-                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer;" onclick="setDifficulty('hard', this)">Rush Hub (3s)</button>
-                </div>
+    <div class="game-container">
+        <!-- Painel de Controle e Fila -->
+        <div class="sidebar">
+            <div class="stats">
+                <span>Fase: <strong id="level">1</strong></span>
+                <span>Pontos: <strong id="score">0</strong></span>
             </div>
-
-            <button class="btn" onclick="startGame()">Entrar em Turno</button>
             
-            <div class="stats-box">
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Recorde de Despachos:</span>
-                <span id="menu-highscore" style="font-size: 1.1rem; font-weight: bold; color: var(--accent);">0 volumes</span>
+            <p>Próximas Caixas:</p>
+            <div class="queue-area" id="queue">
+                <!-- Caixas geradas via JS -->
             </div>
+
+            <button id="rotate-btn">🔄 Girar Caixa (R)</button>
+            <div class="controls-hint">Clique em uma caixa da fila e depois clique no grid para posicionar. Pressione R para rotacionar.</div>
         </div>
 
-        <!-- TELA DE JOGO ATIVO -->
-        <div id="game-screen" class="screen hidden">
-            <div class="ops-header">
-                <div>Volumes: <span id="current-score" style="color: var(--accent); font-weight: bold;">0</span></div>
-                <div>Recorde: <span id="current-high">0</span></div>
-            </div>
-
-            <div class="timer-container">
-                <div id="timer-bar" class="timer-fill"></div>
-            </div>
-
-            <!-- STATUS DO FLUXO DE BASTIDOR -->
-            <div class="scanner-status-box">
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Fluxo Operacional Obrigatório:</div>
-                <div class="step-indicators">
-                    <div id="step-rend" class="step-badge active">1. Bipar Rend</div>
-                    <div id="step-hend" class="step-badge">2. Bipar Hend</div>
-                    <div id="step-chute" class="step-badge">3. Despachar Manga</div>
-                </div>
-            </div>
-
-            <!-- CAIXA / VOLUME NA ESTEIRA -->
-            <div class="cargo-bay">
-                <div class="cargo-info">
-                    <span id="cargo-id" class="cargo-id">PKG-98241</span>
-                    <span id="cargo-title" class="cargo-title">Caixa Grande (Paletizada)</span>
-                    <span id="cargo-dest" class="cargo-dest-tag">MANGA 03 - SP METRO</span>
-                </div>
-                <div style="font-size: 2.2rem;">📦</div>
-            </div>
-
-            <!-- BOTÕES DE BLASTER / SCANNERS (REND / HEND) -->
-            <div class="scanning-panel" id="scanner-actions">
-                <button class="scan-btn btn-rend" onclick="performScan('rend')">
-                    📡 Bipar com REND
-                    <span>Leitor de Lote / ID</span>
-                </button>
-                <button class="scan-btn btn-hend" onclick="performScan('hend')" id="btn-hend-el" style="opacity: 0.5;">
-                    📲 Bipar com HEND
-                    <span>Terminal Manual</span>
-                </button>
-            </div>
-
-            <!-- GRADE DE CANALIZAÇÕES (MANGAS) -->
-            <div class="chutes-grid" id="chutes-container">
-                <!-- Preenchido via Script -->
-            </div>
-        </div>
-
-        <!-- TELA DE FIM DE JOGO -->
-        <div id="gameover-screen" class="screen hidden">
-            <h2 id="gameover-title" style="color: var(--danger);">Falha no Processo / Estouro de Tempo!</h2>
-            
-            <div class="stats-box">
-                <div>Volumes Canalizados: <span id="final-score" style="font-weight: bold; color: var(--accent);">0</span></div>
-                <div>Status do Recorde: <span id="final-record-msg" style="color: var(--success); font-weight: bold;"></span></div>
-            </div>
-
-            <button class="btn" onclick="startGame()">Novo Turno</button>
-            <button class="btn btn-secondary" onclick="returnToMenu()">Menu Principal</button>
-        </div>
-
-        <div class="adsense-container">
-            Espaço Publicitário Reservado (Google AdSense)
+        <!-- Área do Armazém -->
+        <div class="warehouse">
+            <div style="margin-bottom: 10px; font-weight: bold;">Área de Armazenagem (10x10)</div>
+            <div id="grid"></div>
         </div>
     </div>
 
     <script>
-        // Definição das Canalizações / Mangas do Hub
-        const chutesList = [
-            { id: 'M01', name: 'Manga 01', zone: 'NORTE (SPO)' },
-            { id: 'M02', name: 'Manga 02', zone: 'SUL (PR/SC)' },
-            { id: 'M03', name: 'Manga 03', zone: 'SP METRO' },
-            { id: 'M04', name: 'Manga 04', zone: 'NORDESTE' },
-            { id: 'M05', name: 'Manga 05', zone: 'INTERIOR' },
-            { id: 'M06', name: 'Manga 06', zone: 'INTERNACIONAL' }
+        const GRID_SIZE = 10;
+        let score = 0;
+        let currentLevel = 1;
+        let selectedBox = null;
+
+        // Representação do Grid (0 = vazio, 1 = ocupado)
+        let gridData = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+
+        // Exemplo de formatos de caixas (Matrizes)
+        const boxTypes = [
+            { id: 1, name: "P", shape: [[1]] },                     // 1x1
+            { id: 2, name: "M", shape: [[1, 1], [1, 1]] },         // 2x2
+            { id: 3, name: "L", shape: [[1, 1, 1]] },               // 1x3 horizontal
+            { id: 4, name: "V", shape: [[1], [1], [1]] }            // 3x1 vertical
         ];
 
-        const difficulties = {
-            easy: { time: 6.0, name: 'Normal' },
-            medium: { time: 4.5, name: 'Intenso' },
-            hard: { time: 3.0, name: 'Rush Hub' }
-        };
+        let activeBox = null;
 
-        let currentDiff = 'easy';
-        let score = 0;
-        let highscore = localStorage.getItem('logistics_hub_highscore') || 0;
-        let currentCargo = null;
-        let currentStep = 1; // 1: Precisa bipar Rend, 2: Precisa bipar Hend, 3: Precisa colocar na Manga
-        let timerInterval = null;
-        let timeLeft = 0;
-        let totalTime = 0;
-        let isPlaying = false;
+        const gridElement = document.getElementById('grid');
+        const queueElement = document.getElementById('queue');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
 
-        document.getElementById('menu-highscore').innerText = highscore + ' volumes';
+        // Inicializar Grid Visual
+        function initGrid() {
+            gridElement.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
 
-        // Montar botões de canalização na interface
-        const chutesGrid = document.getElementById('chutes-container');
-        chutesList.forEach(chute => {
-            const btn = document.createElement('button');
-            btn.className = 'chute-btn';
-            btn.innerHTML = `<span class="chute-code">${chute.id}</span><span class="chute-name">${chute.name.split(' ')[1]}</span>`;
-            btn.onclick = () => selectChute(chute.id);
-            chutesGrid.appendChild(btn);
-        });
-
-        function setDifficulty(diff, btnEl) {
-            currentDiff = diff;
-            document.querySelectorAll('#menu-screen .btn-secondary').forEach(b => b.style.background = '#30363d');
-            btnEl.style.background = 'var(--accent)';
-        }
-
-        function playSound(type) {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                if (type === 'beep1') { // Som do Rend
-                    osc.frequency.setValueAtTime(800, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
-                    osc.start(); osc.stop(ctx.currentTime + 0.08);
-                } else if (type === 'beep2') { // Som do Hend
-                    osc.frequency.setValueAtTime(1200, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
-                    osc.start(); osc.stop(ctx.currentTime + 0.08);
-                } else if (type === 'success') { // Sucesso na Manga
-                    osc.frequency.setValueAtTime(400, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
-                    osc.start(); osc.stop(ctx.currentTime + 0.12);
-                } else if (type === 'error') {
-                    osc.frequency.setValueAtTime(250, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.25);
-                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-                    osc.start(); osc.stop(ctx.currentTime + 0.25);
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    gridElement.appendChild(cell);
                 }
-            } catch(e) {}
+            }
         }
 
-        function startGame() {
-            score = 0;
-            isPlaying = true;
-            document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('gameover-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            
-            document.getElementById('current-score').innerText = score;
-            document.getElementById('current-high').innerText = highscore;
-
-            nextCargo();
-        }
-
-        function nextCargo() {
-            if (!isPlaying) return;
-
-            currentStep = 1;
-            updateStepUI();
-
-            // Sorteia volume e destino (Manga)
-            const randomChute = chutesList[Math.floor(Math.random() * chutesList.length)];
-            const randomId = 'PKG-' + Math.floor(10000 + Math.random() * 90000);
-            
-            currentCargo = {
-                id: randomId,
-                chuteId: randomChute.id,
-                name: randomChute.name,
-                zone: randomChute.zone
-            };
-
-            document.getElementById('cargo-id').innerText = currentCargo.id;
-            document.getElementById('cargo-dest').innerText = `${currentCargo.chuteId} - ${currentCargo.zone}`;
-
-            // Resetar relógio do volume
-            totalTime = difficulties[currentDiff].time * 1000;
-            timeLeft = totalTime;
-            
-            clearInterval(timerInterval);
-            const startTime = Date.now();
-
-            timerInterval = setInterval(() => {
-                const elapsed = Date.now() - startTime;
-                timeLeft = Math.max(0, totalTime - elapsed);
+        // Gerar Fila de Caixas
+        function generateQueue() {
+            queueElement.innerHTML = '';
+            // Gera 3 caixas aleatórias para a fila
+            for (let i = 0; i < 3; i++) {
+                const randomBox = boxTypes[Math.floor(Math.random() * boxTypes.length)];
+                const boxDiv = document.createElement('div');
+                boxDiv.classList.add('box-item');
+                boxDiv.innerText = randomBox.name;
+                boxDiv.style.width = `${randomBox.shape[0].length * 30}px`;
+                boxDiv.style.height = `${randomBox.shape.length * 30}px`;
                 
-                const percentage = (timeLeft / totalTime) * 100;
-                const bar = document.getElementById('timer-bar');
-                bar.style.width = percentage + '%';
+                boxDiv.addEventListener('click', () => {
+                    activeBox = JSON.parse(JSON.stringify(randomBox)); // Cópia
+                    document.querySelectorAll('.box-item').forEach(el => el.style.border = 'none');
+                    boxDiv.style.border = '2px solid #38bdf8';
+                });
 
-                if (percentage < 30) {
-                    bar.style.backgroundColor = 'var(--danger)';
-                } else {
-                    bar.style.backgroundColor = 'var(--success)';
-                }
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    gameOver('Estouro de tempo na linha!');
-                }
-            }, 50);
-        }
-
-        function updateStepUI() {
-            const stepRend = document.getElementById('step-rend');
-            const stepHend = document.getElementById('step-hend');
-            const stepChute = document.getElementById('step-chute');
-            const btnHendEl = document.getElementById('btn-hend-el');
-
-            stepRend.className = 'step-badge';
-            stepHend.className = 'step-badge';
-            stepChute.className = 'step-badge';
-
-            if (currentStep === 1) {
-                stepRend.classList.add('active');
-                btnHendEl.style.opacity = '0.5';
-            } else if (currentStep === 2) {
-                stepRend.classList.add('done');
-                stepHend.classList.add('active');
-                btnHendEl.style.opacity = '1';
-            } else if (currentStep === 3) {
-                stepRend.classList.add('done');
-                stepHend.classList.add('done');
-                stepChute.classList.add('active');
+                queueElement.appendChild(boxDiv);
             }
         }
 
-        function performScan(device) {
-            if (!isPlaying) return;
+        // Lidar com o clique no grid para posicionar a caixa
+        function handleCellClick(row, col) {
+            if (!activeBox) return;
 
-            if (device === 'rend' && currentStep === 1) {
-                playSound('beep1');
-                currentStep = 2;
-                updateStepUI();
-            } else if (device === 'hend' && currentStep === 2) {
-                playSound('beep2');
-                currentStep = 3;
-                updateStepUI();
-            } else {
-                playSound('error');
-                gameOver('Ordem de bipagem incorreta!');
-            }
-        }
+            const shape = activeBox.shape;
+            const rows = shape.length;
+            const cols = shape[0].length;
 
-        function selectChute(selectedChuteId) {
-            if (!isPlaying) return;
-
-            if (currentStep !== 3) {
-                playSound('error');
-                gameOver('Tentativa de despacho sem bipedgem completa (Rend/Hend)!');
+            // Verificar se cabe no grid
+            if (row + rows > GRID_SIZE || col + cols > GRID_SIZE) {
+                alert("A caixa não cabe aqui!");
                 return;
             }
 
-            if (selectedChuteId === currentCargo.chuteId) {
-                score++;
-                playSound('success');
-                document.getElementById('current-score').innerText = score;
-                nextCargo();
-            } else {
-                playSound('error');
-                gameOver('Volume depositado na manga errada!');
+            // Verificar colisão
+            let collision = false;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (shape[r][c] === 1 && gridData[row + r][col + c] === 1) {
+                        collision = true;
+                    }
+                }
+            }
+
+            if (collision) {
+                alert("Espaço já ocupado!");
+                return;
+            }
+
+            // Posicionar no grid de dados
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (shape[r][c] === 1) {
+                        gridData[row + r][col + c] = 1;
+                    }
+                }
+            }
+
+            score += 100;
+            scoreElement.innerText = score;
+            activeBox = null;
+            updateGridVisual();
+            generateQueue();
+        }
+
+        // Atualizar visual do grid com base na matriz de dados
+        function updateGridVisual() {
+            const cells = gridElement.children;
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const index = r * GRID_SIZE + c;
+                    if (gridData[r][c] === 1) {
+                        cells[index].classList.add('occupied');
+                    } else {
+                        cells[index].classList.remove('occupied');
+                    }
+                }
             }
         }
 
-        function gameOver(reason) {
-            isPlaying = false;
-            clearInterval(timerInterval);
-
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('gameover-screen').classList.remove('hidden');
-            document.getElementById('gameover-title').innerText = reason;
-            document.getElementById('final-score').innerText = score;
-
-            let recordMsg = '';
-            if (score > highscore) {
-                highscore = score;
-                localStorage.setItem('logistics_hub_highscore', highscore);
-                document.getElementById('menu-highscore').innerText = highscore + ' volumes';
-                recordMsg = '🎉 Novo Recorde no Hub!';
-            } else {
-                recordMsg = `Recorde atual: ${highscore} volumes`;
+        // Girar caixa ativa
+        document.getElementById('rotate-btn').addEventListener('click', () => {
+            if (!activeBox) return;
+            const shape = activeBox.shape;
+            const rows = shape.length;
+            const cols = shape[0].length;
+            
+            let rotated = Array(cols).fill(0).map(() => Array(rows).fill(0));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    rotated[c][rows - 1 - r] = shape[r][c];
+                }
             }
-            document.getElementById('final-record-msg').innerText = recordMsg;
-        }
+            activeBox.shape = rotated;
+            alert("Caixa rotacionada!");
+        });
 
-        function returnToMenu() {
-            document.getElementById('gameover-screen').classList.add('hidden');
-            document.getElementById('menu-screen').classList.remove('hidden');
-        }
+        // Inicialização
+        initGrid();
+        generateQueue();
     </script>
 </body>
 </html>
-
-```
