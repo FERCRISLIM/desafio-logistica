@@ -1,728 +1,1147 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris do Estoque: Caos na Operação</title>
-    <style>
-        :root {
-            --bg-color: #0b0f19;
-            --panel-color: #1e293b;
-            --panel-border: #334155;
-            --accent-color: #38bdf8;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🚨 Caos na Operação</title>
+<meta name="description" content="Gerencie um depósito em chaos: receba caminhões, entregue as caixas certas nas docas certas e não deixe o caos tomar conta da operação.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-        }
+:root{
+  --bg-0:#101218;
+  --bg-1:#171b23;
+  --bg-2:#1f2530;
+  --bg-3:#2a3140;
+  --steel:#3a4356;
+  --steel-light:#4c5670;
+  --amber:#ffc72c;
+  --amber-dark:#d6a520;
+  --orange:#ff6b35;
+  --red:#ef4444;
+  --green:#4ade80;
+  --blue:#60a5fa;
+  --text:#edece6;
+  --text-dim:#9aa1ac;
+  --font-display:'Oswald','Arial Narrow',sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{
+  margin:0;padding:0;height:100%;
+  background:var(--bg-0);
+  color:var(--text);
+  font-family:var(--font-body);
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+body{
+  background-image:
+    radial-gradient(circle at 10% 0%, rgba(255,199,44,0.05), transparent 40%),
+    radial-gradient(circle at 90% 100%, rgba(255,107,53,0.06), transparent 45%);
+}
+.hazard-bar{
+  height:10px;width:100%;flex:0 0 auto;
+  background:repeating-linear-gradient(135deg,var(--amber) 0 18px,#1a1c1f 18px 36px);
+}
+button{
+  font-family:var(--font-body);
+  cursor:pointer;
+  border:none;
+  background:none;
+  color:inherit;
+}
+button:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--amber);
+  outline-offset:2px;
+}
+.screen{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  height:100%;width:100%;
+}
+.hidden{display:none !important;}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 10px;
-            overflow-x: hidden;
-        }
+/* ---------- START SCREEN ---------- */
+#startScreen{
+  align-items:stretch;
+  background:var(--bg-0);
+}
+.start-scroll{
+  flex:1;overflow-y:auto;
+  display:flex;flex-direction:column;align-items:center;
+  padding:28px 18px 40px;
+}
+.logo-wrap{
+  text-align:center;margin-bottom:6px;
+  max-width:640px;
+}
+.logo-icon{font-size:44px;line-height:1;margin-bottom:6px;filter:drop-shadow(0 4px 10px rgba(255,199,44,0.35));}
+.logo-title{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(28px,7vw,46px);
+  letter-spacing:0.5px;
+  margin:0;
+  color:var(--amber);
+  text-shadow:0 2px 0 rgba(0,0,0,0.4);
+}
+.logo-sub{
+  color:var(--text-dim);
+  font-size:15px;
+  margin-top:8px;
+  line-height:1.5;
+}
+.panel{
+  background:var(--bg-1);
+  border:1px solid var(--steel);
+  border-radius:6px;
+  padding:20px;
+  width:100%;max-width:520px;
+  margin-top:20px;
+}
+.panel h2{
+  font-family:var(--font-display);
+  font-size:15px;
+  letter-spacing:0.4px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  margin:0 0 14px;
+  border-left:3px solid var(--amber);
+  padding-left:10px;
+}
+.diff-row{display:flex;gap:10px;flex-wrap:wrap;}
+.diff-btn{
+  flex:1;min-width:100px;
+  background:var(--bg-2);
+  border:2px solid var(--steel);
+  border-radius:5px;
+  padding:12px 8px;
+  text-align:center;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.diff-btn strong{display:block;font-family:var(--font-display);font-size:16px;letter-spacing:.3px;}
+.diff-btn span{display:block;font-size:11px;color:var(--text-dim);margin-top:3px;}
+.diff-btn.active{
+  border-color:var(--amber);
+  background:linear-gradient(180deg,rgba(255,199,44,0.16),rgba(255,199,44,0.04));
+}
+.diff-btn:active{transform:scale(0.97);}
 
-        /* Telas (Menu / Jogo / Fim de Jogo) */
-        .screen {
-            display: none;
-            width: 100%;
-            max-width: 950px;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
+.start-btn{
+  margin-top:22px;
+  width:100%;max-width:520px;
+  background:linear-gradient(180deg,#ffd85c,var(--amber-dark));
+  color:#231a02;
+  font-family:var(--font-display);
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:0.6px;
+  text-transform:uppercase;
+  padding:16px;
+  border-radius:6px;
+  box-shadow:0 6px 0 #93700f, 0 8px 18px rgba(0,0,0,0.4);
+  transition:transform .08s, box-shadow .08s;
+}
+.start-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #93700f, 0 4px 10px rgba(0,0,0,0.4);}
 
-        .screen.active {
-            display: flex;
-        }
+.stat-row{display:flex;gap:14px;margin-top:16px;width:100%;max-width:520px;}
+.stat-box{
+  flex:1;background:var(--bg-1);border:1px solid var(--steel);border-radius:6px;
+  padding:12px;text-align:center;
+}
+.stat-box .num{font-family:var(--font-display);font-size:22px;color:var(--amber);}
+.stat-box .lbl{font-size:11px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
 
-        /* Tela Inicial */
-        #menu-screen {
-            text-align: center;
-            background: var(--panel-color);
-            padding: 40px 20px;
-            border-radius: 16px;
-            border: 1px solid var(--panel-border);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            max-width: 500px;
-        }
+.howto-toggle{
+  margin-top:16px;width:100%;max-width:520px;
+  background:var(--bg-1);border:1px solid var(--steel);border-radius:6px;
+  padding:12px 16px;display:flex;justify-content:space-between;align-items:center;
+  font-size:14px;color:var(--text-dim);
+}
+.howto-body{
+  width:100%;max-width:520px;background:var(--bg-1);border:1px solid var(--steel);border-top:none;
+  border-radius:0 0 6px 6px;padding:0 16px;max-height:0;overflow:hidden;transition:max-height .25s ease, padding .25s;
+  font-size:13.5px;line-height:1.6;color:var(--text-dim);
+}
+.howto-body.open{max-height:420px;padding:14px 16px 18px;}
+.howto-body b{color:var(--text);}
+.howto-body ul{margin:8px 0;padding-left:18px;}
 
-        #menu-screen h1 {
-            font-size: 2.2rem;
-            color: var(--accent-color);
-            margin-bottom: 10px;
-        }
+.ach-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
+}
+.ach-card{
+  background:var(--bg-2);border:1px solid var(--steel);border-radius:6px;padding:10px;
+  text-align:center;opacity:0.45;
+}
+.ach-card.unlocked{opacity:1;border-color:var(--amber);}
+.ach-card .aicon{font-size:22px;}
+.ach-card .aname{font-family:var(--font-display);font-size:12.5px;margin-top:4px;}
+.ach-card .adesc{font-size:10px;color:var(--text-dim);margin-top:2px;line-height:1.3;}
 
-        #menu-screen p {
-            color: var(--text-muted);
-            margin-bottom: 25px;
-            font-size: 1rem;
-        }
+/* ---------- GAME SCREEN ---------- */
+#gameScreen{background:var(--bg-0);}
+#hud{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:14px;
+  padding:10px 14px;
+  background:var(--bg-1);
+  border-bottom:2px solid var(--steel);
+  flex-wrap:wrap;
+}
+.hud-item{display:flex;flex-direction:column;min-width:56px;}
+.hud-item .hv{font-family:var(--font-display);font-size:20px;font-variant-numeric:tabular-nums;}
+.hud-item .hl{font-size:9.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;}
+#hudScore .hv{color:var(--amber);}
+#hudTimer .hv{color:var(--text);}
+#hudLevel .hv{color:var(--blue);}
+.level-bar-wrap{width:56px;height:4px;background:var(--bg-3);border-radius:2px;margin-top:3px;overflow:hidden;}
+.level-bar-fill{height:100%;background:var(--blue);}
 
-        .btn {
-            background-color: var(--accent-color);
-            color: #0b0f19;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, filter 0.2s;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-            margin: 5px;
-        }
+.chaos-wrap{flex:1;min-width:120px;display:flex;flex-direction:column;gap:3px;}
+.chaos-wrap .hl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;}
+.chaos-bar-track{height:12px;background:var(--bg-3);border-radius:6px;overflow:hidden;border:1px solid var(--steel);}
+.chaos-bar-fill{height:100%;width:0%;background:var(--green);transition:width .2s, background .2s;}
+.chaos-bar-fill.mid{background:var(--amber);}
+.chaos-bar-fill.high{background:var(--red);animation:chaosPulse .6s infinite;}
+@keyframes chaosPulse{0%,100%{filter:brightness(1);}50%{filter:brightness(1.5);}}
 
-        .btn:hover {
-            filter: brightness(1.1);
-            transform: translateY(-2px);
-        }
+.icon-btn{
+  width:38px;height:38px;border-radius:6px;background:var(--bg-2);border:1px solid var(--steel);
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;
+}
+.icon-btn:active{transform:scale(0.92);}
 
-        .btn:active {
-            transform: translateY(0);
-        }
+#gameBody{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;
+}
+#docksSection{
+  flex:1 1 auto;
+  padding:14px;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+}
+.section-label{
+  font-family:var(--font-display);font-size:12px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:8px;flex:0 0 auto;
+}
+#docksGrid{
+  flex:1;display:grid;gap:10px;overflow-y:auto;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  align-content:start;
+}
+.dock-card{
+  background:var(--bg-2);
+  border:2px solid var(--steel);
+  border-radius:6px;
+  padding:10px;
+  min-height:150px;
+  display:flex;flex-direction:column;
+  position:relative;
+  transition:border-color .15s;
+}
+.dock-card.has-truck{border-color:var(--steel-light);}
+.dock-card.broken{border-color:var(--red);}
+.dock-card.locked{opacity:.4;justify-content:center;align-items:center;text-align:center;}
+.dock-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.dock-name{font-family:var(--font-display);font-size:12px;color:var(--text-dim);letter-spacing:.4px;}
+.dock-status{font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg-3);color:var(--text-dim);}
+.dock-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--text-dim);font-size:12px;gap:4px;text-align:center;
+}
+.dock-empty .de-icon{font-size:26px;opacity:.5;}
+.truck-box{flex:1;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
+.truck-top{display:flex;align-items:center;gap:8px;}
+.truck-icon{font-size:26px;}
+.truck-name{font-size:12px;color:var(--text);font-weight:600;}
+.truck-count{font-family:var(--font-display);font-size:13px;color:var(--amber);}
+.truck-dots{display:flex;flex-wrap:wrap;gap:3px;}
+.truck-dot{width:14px;height:14px;border-radius:3px;background:var(--bg-3);border:1px solid var(--steel);display:flex;align-items:center;justify-content:center;font-size:9px;}
+.truck-dot.filled{background:var(--green);border-color:var(--green);}
+.timer-track{height:6px;border-radius:3px;background:var(--bg-3);overflow:hidden;margin-top:auto;}
+.timer-fill{height:100%;background:var(--green);transition:width .15s linear, background .3s;}
+.timer-fill.mid{background:var(--amber);}
+.timer-fill.low{background:var(--red);}
+.broken-overlay{
+  position:absolute;inset:0;background:rgba(20,10,10,0.72);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;border-radius:4px;text-align:center;padding:8px;
+}
+.broken-overlay .bicon{font-size:24px;}
+.broken-overlay .btext{font-size:11px;color:#ffb4b4;}
 
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
+#queueSection{
+  flex:0 0 auto;
+  background:var(--bg-1);
+  border-top:2px solid var(--steel);
+  padding:10px 14px 14px;
+}
+#queueRow{
+  display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;min-height:96px;
+}
+.box-card{
+  flex:0 0 auto;width:74px;
+  background:var(--bg-2);border:2px solid var(--steel);border-radius:6px;
+  padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:border-color .12s, transform .1s;
+}
+.box-card .bx-icon{font-size:24px;}
+.box-card .bx-name{font-size:9px;color:var(--text-dim);text-align:center;line-height:1.2;}
+.box-card .bx-timer{width:100%;height:4px;background:var(--bg-3);border-radius:2px;overflow:hidden;}
+.box-card .bx-timer-fill{height:100%;background:var(--green);}
+.box-card.selected{border-color:var(--amber);transform:translateY(-3px);box-shadow:0 4px 10px rgba(255,199,44,0.25);}
+.box-card.fragile{outline:1px dashed var(--orange);}
+.queue-empty{color:var(--text-dim);font-size:12.5px;padding:20px 0;text-align:center;width:100%;}
 
-        /* Layout Principal do Jogo */
-        .game-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            width: 100%;
-        }
+/* toasts */
+#toastLayer{
+  position:fixed;top:70px;right:12px;left:12px;
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+  pointer-events:none;z-index:40;
+}
+.toast{
+  pointer-events:auto;
+  max-width:320px;
+  background:var(--bg-2);border:1px solid var(--steel);border-left:4px solid var(--blue);
+  border-radius:5px;padding:9px 12px;font-size:12.5px;
+  animation:toastIn .18s ease-out;
+  box-shadow:0 6px 14px rgba(0,0,0,0.35);
+}
+.toast.good{border-left-color:var(--green);}
+.toast.bad{border-left-color:var(--red);}
+.toast.warn{border-left-color:var(--orange);}
+.toast.level{border-left-color:var(--amber);}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
 
-        @media (min-width: 768px) {
-            .game-layout {
-                grid-template-columns: 280px 1fr 280px;
-            }
-        }
+#achToastLayer{
+  position:fixed;top:90px;left:50%;transform:translateX(-50%);
+  z-index:50;display:flex;flex-direction:column;gap:8px;align-items:center;
+  pointer-events:none;
+}
+.ach-toast{
+  background:linear-gradient(180deg,#3a2f0c,#1c1706);
+  border:1px solid var(--amber);border-radius:8px;
+  padding:12px 18px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  animation:achIn .25s ease-out;
+  min-width:240px;
+}
+@keyframes achIn{from{opacity:0;transform:translateY(-14px) scale(.9);}to{opacity:1;transform:translateY(0) scale(1);}}
+.ach-toast .aticon{font-size:28px;}
+.ach-toast .atlabel{font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;}
+.ach-toast .atname{font-family:var(--font-display);font-size:15px;}
 
-        .panel {
-            background-color: var(--panel-color);
-            border: 1px solid var(--panel-border);
-            padding: 15px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
+/* events */
+#eventsLayer{
+  position:fixed;top:70px;left:12px;right:12px;
+  display:flex;flex-direction:column;gap:8px;z-index:35;
+  pointer-events:none;align-items:flex-start;
+}
+.event-card{
+  pointer-events:auto;
+  background:var(--bg-2);border:2px solid var(--orange);border-radius:7px;
+  padding:10px 12px;max-width:320px;width:100%;
+  box-shadow:0 8px 20px rgba(0,0,0,0.4);
+  animation:toastIn .2s ease-out;
+}
+.event-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.event-icon{font-size:22px;}
+.event-msg{font-size:12.5px;flex:1;line-height:1.3;}
+.event-timer-track{height:4px;background:var(--bg-3);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+.event-timer-fill{height:100%;background:var(--orange);transition:width .15s linear;}
+.event-bottom{display:flex;align-items:center;gap:10px;}
+.event-progress{flex:1;height:8px;background:var(--bg-3);border-radius:4px;overflow:hidden;}
+.event-progress-fill{height:100%;background:var(--green);transition:width .15s;}
+.event-resolve-btn{
+  background:var(--amber);color:#231a02;font-family:var(--font-display);
+  font-size:12px;font-weight:700;padding:8px 14px;border-radius:5px;letter-spacing:.3px;
+}
+.event-resolve-btn:active{transform:scale(0.94);}
 
-        /* Cabeçalho de Status */
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 950px;
-            background: var(--panel-color);
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--panel-border);
-            font-size: 0.95rem;
-            font-weight: bold;
-        }
+/* pause overlay */
+#pauseOverlay{
+  position:fixed;inset:0;background:rgba(10,11,15,0.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:60;
+}
+#pauseOverlay h2{font-family:var(--font-display);font-size:30px;color:var(--amber);margin:0;letter-spacing:1px;}
+.resume-btn{
+  background:var(--amber);color:#231a02;font-family:var(--font-display);font-weight:700;
+  font-size:16px;padding:12px 28px;border-radius:6px;letter-spacing:.4px;
+}
 
-        .stats-bar span span {
-            color: var(--accent-color);
-        }
+/* game over */
+#gameOverScreen{
+  align-items:center;justify-content:center;background:var(--bg-0);
+}
+.go-panel{
+  width:100%;max-width:480px;margin:0 18px;
+  background:var(--bg-1);border:1px solid var(--steel);border-radius:8px;
+  padding:26px 22px;text-align:center;max-height:92vh;overflow-y:auto;
+}
+.go-panel h1{font-family:var(--font-display);color:var(--red);font-size:26px;margin:0 0 4px;letter-spacing:.5px;}
+.go-sub{color:var(--text-dim);font-size:13px;margin-bottom:16px;}
+.go-record{
+  display:inline-block;margin-bottom:14px;padding:6px 14px;border:1px solid var(--amber);
+  border-radius:20px;color:var(--amber);font-size:12.5px;font-family:var(--font-display);letter-spacing:.4px;
+}
+.go-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.go-stat{background:var(--bg-2);border:1px solid var(--steel);border-radius:6px;padding:12px;}
+.go-stat .num{font-family:var(--font-display);font-size:22px;color:var(--amber);}
+.go-stat .lbl{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;margin-top:2px;}
+.go-ach-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px;}
+.go-ach-chip{
+  display:flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid var(--amber);
+  border-radius:20px;padding:5px 12px;font-size:11.5px;
+}
+.go-btn-row{display:flex;gap:10px;}
+.go-btn{
+  flex:1;padding:13px;border-radius:6px;font-family:var(--font-display);font-size:14px;
+  letter-spacing:.4px;text-transform:uppercase;
+}
+.go-btn.primary{background:linear-gradient(180deg,#ffd85c,var(--amber-dark));color:#231a02;font-weight:700;}
+.go-btn.secondary{background:var(--bg-2);border:1px solid var(--steel);color:var(--text);}
 
-        /* Área do Grid do Estoque */
-        .warehouse-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--steel);border-radius:4px;}
 
-        #grid {
-            display: grid;
-            grid-template-columns: repeat(10, 32px);
-            grid-template-rows: repeat(10, 32px);
-            gap: 2px;
-            background-color: #0f172a;
-            padding: 6px;
-            border-radius: 8px;
-            border: 2px solid var(--panel-border);
-        }
-
-        .cell {
-            background-color: #1e293b;
-            border-radius: 4px;
-            transition: background-color 0.15s;
-        }
-
-        .cell.occupied-1 { background-color: #f59e0b; } /* Caixa P */
-        .cell.occupied-2 { background-color: #3b82f6; } /* Caixa M */
-        .cell.occupied-3 { background-color: #ec4899; } /* Caixa G */
-        .cell.obstacle   { background-color: #64748b; } /* Obstáculo */
-
-        /* Alerta de Evento Caótico */
-        #event-banner {
-            background-color: rgba(239, 68, 68, 0.2);
-            border: 1px solid var(--danger);
-            color: #fca5a5;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            text-align: center;
-            display: none;
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        /* Pedidos e Docas */
-        .order-card {
-            background: rgba(0,0,0,0.3);
-            border-left: 4px solid var(--warning);
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .order-card.urgent {
-            border-left-color: var(--danger);
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            background: #334155;
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: var(--warning);
-            width: 100%;
-            transition: width 0.1s linear;
-        }
-
-        /* Fila de Caixas Disponíveis */
-        .box-queue {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            min-height: 80px;
-            align-items: center;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            padding: 10px;
-            overflow-x: auto;
-        }
-
-        .draggable-box {
-            background-color: var(--warning);
-            color: #0b0f19;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            transition: transform 0.1s, filter 0.1s;
-            font-size: 0.8rem;
-        }
-
-        .draggable-box.selected {
-            filter: brightness(1.2);
-            outline: 2px solid white;
-            transform: scale(1.05);
-        }
-
-        /* Log de Conquistas e Eventos */
-        .achievements-box {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            max-height: 120px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.2);
-            padding: 8px;
-            border-radius: 6px;
-        }
-
-        /* Tela de Fim de Jogo */
-        #gameover-screen {
-            text-align: center;
-            background: var(--panel-color);
-            padding: 40px 20px;
-            border-radius: 16px;
-            border: 1px solid var(--panel-border);
-            max-width: 450px;
-        }
-
-        #gameover-screen h2 {
-            font-size: 2rem;
-            color: var(--danger);
-            margin-bottom: 10px;
-        }
-
-        .final-stats {
-            margin: 20px 0;
-            font-size: 1.1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-    </style>
+@media (max-width:640px){
+  .logo-title{font-size:30px;}
+  #hud{gap:10px;padding:8px 10px;}
+  .hud-item{min-width:44px;}
+  .hud-item .hv{font-size:16px;}
+  #docksGrid{grid-template-columns:repeat(2,1fr);}
+  .dock-card{min-height:130px;}
+  .box-card{width:64px;}
+  .go-stats{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:400px){
+  #docksGrid{grid-template-columns:1fr 1fr;}
+}
+</style>
 </head>
 <body>
 
-    <!-- TELA INICIAL -->
-    <div id="menu-screen" class="screen active">
-        <h1>📦 Tetris do Estoque</h1>
-        <p>Gerencie o armazém sob pressão, atenda pedidos de última hora, desvie de imprevistos e evite o colapso logístico!</p>
-        <button class="btn" onclick="startGame()">▶ Iniciar Operação</button>
-        <div style="margin-top: 15px; font-size: 0.85rem; color: var(--text-muted);">
-            Recorde Atual: <span id="menu-highscore" style="color: var(--accent-color); font-weight: bold;">0</span> pts
-        </div>
+<!-- ============ START SCREEN ============ -->
+<div id="startScreen" class="screen">
+  <div class="hazard-bar"></div>
+  <div class="start-scroll">
+    <div class="logo-wrap">
+      <div class="logo-icon">🚨</div>
+      <h1 class="logo-title">CAOS NA OPERAÇÃO</h1>
+      <p class="logo-sub">Você assumiu o turno no depósito. Caminhões chegam, pedidos se acumulam e qualquer coisa pode dar errado. Mantenha tudo funcionando o máximo de tempo possível.</p>
     </div>
 
-    <!-- TELA DO JOGO -->
-    <div id="game-screen" class="screen">
-        <div class="stats-bar">
-            <span>Pontos: <span id="score">0</span></span>
-            <span>Nível: <span id="level">1</span></span>
-            <span>Estresse: <span id="stress">0</span>%</span>
-        </div>
-
-        <div id="event-banner">⚠️ ALERTA: Palete travado na esteira! Agilidade redobrada!</div>
-
-        <div class="game-layout">
-            <!-- PAINEL ESQUERDO: Pedidos e Docas -->
-            <div class="panel">
-                <h3>🚚 Docas de Expedição</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Pedidos ativos aguardando encaixe:</p>
-                <div id="orders-container" style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- Preenchido via JS -->
-                </div>
-            </div>
-
-            <!-- PAINEL CENTRAL: O Armazém (Grid) -->
-            <div class="panel warehouse-container">
-                <div style="font-weight: bold; font-size: 0.95rem;">Área do Armazém (10x10)</div>
-                <div id="grid"></div>
-                <div style="display: flex; gap: 10px; width: 100%; justify-content: center; margin-top: 5px;">
-                    <button class="btn" style="padding: 8px 15px; font-size: 0.9rem;" onclick="rotateActiveBox()">🔄 Girar (R)</button>
-                    <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.9rem;" onclick="clearSelectedBox()">❌ Descartar</button>
-                </div>
-            </div>
-
-            <!-- PAINEL DIREITO: Esteira de Caixas e Conquistas -->
-            <div class="panel">
-                <h3>📦 Esteira de Carga</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione uma caixa para posicionar:</p>
-                <div class="box-queue" id="box-queue">
-                    <!-- Preenchido via JS -->
-                </div>
-
-                <h3>🏆 Conquistas & Log</h3>
-                <div class="achievements-box" id="log-box">
-                    <div>[00:00] Operação iniciada. Bom trabalho!</div>
-                </div>
-            </div>
-        </div>
+    <div class="panel">
+      <h2>Escolha a dificuldade</h2>
+      <div class="diff-row" id="diffRow">
+        <button class="diff-btn" data-diff="facil"><strong>Fácil</strong><span>Mais tempo, menos pressão</span></button>
+        <button class="diff-btn active" data-diff="normal"><strong>Normal</strong><span>Ritmo equilibrado</span></button>
+        <button class="diff-btn" data-diff="dificil"><strong>Difícil</strong><span>Caos acelerado</span></button>
+      </div>
     </div>
 
-    <!-- TELA DE FIM DE JOGO -->
-    <div id="gameover-screen" class="screen">
-        <h2>💥 Estoque Colapsou!</h2>
-        <p style="color: var(--text-muted);">O armazém ficou completamente travado ou o estresse atingiu o limite crítico.</p>
-        
-        <div class="final-stats">
-            <div>Pontuação Final: <strong id="final-score" style="color: var(--accent-color);">0</strong></div>
-            <div>Nível Alcançado: <strong id="final-level">1</strong></div>
-            <div>Novo Recorde: <strong id="final-record" style="color: var(--success);">Não</strong></div>
-        </div>
+    <button class="start-btn" id="startBtn">▶ Iniciar Turno</button>
 
-        <button class="btn" onclick="startGame()">🔄 Tentar Novamente</button>
+    <div class="stat-row">
+      <div class="stat-box"><div class="num" id="bestScoreDisplay">0</div><div class="lbl">Recorde</div></div>
+      <div class="stat-box"><div class="num" id="bestTimeDisplay">00:00</div><div class="lbl">Melhor tempo</div></div>
+      <div class="stat-box"><div class="num" id="achCountDisplay">0/8</div><div class="lbl">Conquistas</div></div>
     </div>
 
-    <script>
-        // Configurações do Jogo
-        const GRID_SIZE = 10;
-        let score = 0;
-        let level = 1;
-        let stress = 0;
-        let highscore = localStorage.getItem('tetris_estoque_record') || 0;
-        
-        let gridData = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-        let activeBoxIndex = null;
-        let activeBoxRotation = 0; // 0, 90, 180, 270
-        let availableBoxes = [];
-        let orders = [];
-        let gameInterval = null;
-        let eventActive = false;
+    <div class="howto-toggle" id="howtoToggle">
+      <span>▸ Como jogar</span><span id="howtoArrow">＋</span>
+    </div>
+    <div class="howto-body" id="howtoBody">
+      <p><b>Objetivo:</b> mantenha o depósito funcionando o máximo de tempo possível sem deixar o medidor de caos chegar a 100%.</p>
+      <ul>
+        <li><b>Toque numa caixa</b> na fila de pedidos para selecioná-la.</li>
+        <li><b>Toque na doca</b> com o caminhão que precisa daquele tipo de caixa para entregar.</li>
+        <li>Entregar a caixa errada, deixar uma caixa expirar ou um caminhão ir embora incompleto <b>aumenta o caos</b>.</li>
+        <li>Problemas aleatórios (incêndio, empilhadeira quebrada, falta de energia) aparecem no topo — <b>toque em "Resolver"</b> várias vezes antes que o tempo acabe.</li>
+        <li>A cada nível, novas docas são liberadas e a operação fica mais intensa.</li>
+      </ul>
+    </div>
 
-        // Modelos de Caixas Disponíveis (ID, Nome, Tipo de Formato, Tamanho Base)
-        const boxTemplates = [
-            { id: 1, name: "P (1x1)", type: 1, shape: [[1]] },
-            { id: 2, name: "L (1x2)", type: 1, shape: [[1, 1]] },
-            { id: 3, name: "V (2x1)", type: 1, shape: [[1], [1]] },
-            { id: 4, name: "M (2x2)", type: 2, shape: [[1, 1], [1, 1]] },
-            { id: 5, name: "G (1x3)", type: 3, shape: [[1, 1, 1]] },
-            { id: 6, name: "T (Formato T)", type: 2, shape: [[0, 1, 0], [1, 1, 1]] }
-        ];
+    <div class="panel" style="max-width:640px;">
+      <h2>Conquistas</h2>
+      <div class="ach-grid" id="achGrid"></div>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
 
-        document.getElementById('menu-highscore').innerText = highscore;
+<!-- ============ GAME SCREEN ============ -->
+<div id="gameScreen" class="screen hidden">
+  <div id="hud">
+    <div class="hud-item" id="hudScore"><span class="hv" id="scoreVal">0</span><span class="hl">Pontos</span></div>
+    <div class="hud-item" id="hudLevel">
+      <span class="hv" id="levelVal">1</span><span class="hl">Nível</span>
+      <div class="level-bar-wrap"><div class="level-bar-fill" id="levelBarFill" style="width:0%"></div></div>
+    </div>
+    <div class="hud-item" id="hudTimer"><span class="hv" id="timerVal">00:00</span><span class="hl">Tempo</span></div>
+    <div class="chaos-wrap">
+      <div class="hl"><span>Caos</span><span id="chaosPct">0%</span></div>
+      <div class="chaos-bar-track"><div class="chaos-bar-fill" id="chaosBarFill"></div></div>
+    </div>
+    <button class="icon-btn" id="muteBtn" title="Som">🔊</button>
+    <button class="icon-btn" id="pauseBtn" title="Pausar">⏸</button>
+  </div>
 
-        function startGame() {
-            // Resetar variáveis
-            score = 0;
-            level = 1;
-            stress = 0;
-            gridData = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
-            availableBoxes = [];
-            orders = [];
-            activeBoxIndex = null;
-            eventActive = false;
+  <div id="gameBody">
+    <div id="eventsLayer"></div>
+    <div id="toastLayer"></div>
+    <div id="achToastLayer"></div>
 
-            document.getElementById('score').innerText = score;
-            document.getElementById('level').innerText = level;
-            document.getElementById('stress').innerText = stress;
-            document.getElementById('log-box').innerHTML = '<div>[00:00] Operação iniciada. Bom trabalho!</div>';
+    <div id="docksSection">
+      <div class="section-label">Docas de Carregamento</div>
+      <div id="docksGrid"></div>
+    </div>
 
-            // Trocar Telas
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('game-screen').classList.add('active');
+    <div id="queueSection">
+      <div class="section-label">Fila de Pedidos</div>
+      <div id="queueRow"></div>
+    </div>
+  </div>
 
-            initGridVisual();
-            generateInitialBoxes();
-            generateOrder();
+  <div id="pauseOverlay" class="hidden">
+    <h2>⏸ PAUSADO</h2>
+    <button class="resume-btn" id="resumeBtn">▶ Continuar</button>
+  </div>
+</div>
 
-            if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(gameLoop, 1000);
-        }
+<!-- ============ GAME OVER SCREEN ============ -->
+<div id="gameOverScreen" class="screen hidden">
+  <div class="go-panel">
+    <h1>🚨 Operação Parada</h1>
+    <p class="go-sub" id="goReason">O caos tomou conta do depósito.</p>
+    <div id="goRecordBadge" class="go-record hidden">🏆 Novo recorde!</div>
+    <div class="go-stats">
+      <div class="go-stat"><div class="num" id="goScore">0</div><div class="lbl">Pontuação</div></div>
+      <div class="go-stat"><div class="num" id="goTime">00:00</div><div class="lbl">Tempo sobrevivido</div></div>
+      <div class="go-stat"><div class="num" id="goTrucks">0</div><div class="lbl">Caminhões despachados</div></div>
+      <div class="go-stat"><div class="num" id="goLevel">1</div><div class="lbl">Nível alcançado</div></div>
+    </div>
+    <div id="goAchList" class="go-ach-list"></div>
+    <div class="go-btn-row">
+      <button class="go-btn secondary" id="menuBtn">Menu Principal</button>
+      <button class="go-btn primary" id="retryBtn">Jogar Novamente</button>
+    </div>
+  </div>
+</div>
 
-        function initGridVisual() {
-            const gridEl = document.getElementById('grid');
-            gridEl.innerHTML = '';
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
-                    cell.addEventListener('click', () => handleCellClick(r, c));
-                    gridEl.appendChild(cell);
-                }
-            }
-        }
+<script>
+(function(){
+"use strict";
 
-        function updateGridVisual() {
-            const cells = document.getElementById('grid').children;
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const index = r * GRID_SIZE + c;
-                    cells[index].className = 'cell';
-                    if (gridData[r][c] > 0) {
-                        if (gridData[r][c] === 99) {
-                            cells[index].classList.add('obstacle');
-                        } else {
-                            cells[index].classList.add(`occupied-${gridData[r][c]}`);
-                        }
-                    }
-                }
-            }
-        }
+/* ================= DATA ================= */
+var BOX_TYPES = [
+  {id:'eletro', icon:'📱', name:'Eletrônicos', fragile:false},
+  {id:'aliment', icon:'🍎', name:'Alimentos', fragile:false},
+  {id:'roupa', icon:'👕', name:'Roupas', fragile:false},
+  {id:'brinq', icon:'🧸', name:'Brinquedos', fragile:false},
+  {id:'livro', icon:'📚', name:'Livros', fragile:false},
+  {id:'fragil', icon:'🍷', name:'Frágeis', fragile:true}
+];
 
-        function generateInitialBoxes() {
-            availableBoxes = [];
-            for (let i = 0; i < 3; i++) {
-                addNewBoxToQueue();
-            }
-            renderQueue();
-        }
+var EVENT_TYPES = [
+  {type:'forklift', icon:'🔧', msg:'Empilhadeira quebrou', clicksNeeded:3, affectsDock:'single', chaosOnFail:15, scoreOnSuccess:20, timeLimit:9000},
+  {type:'fire',      icon:'🔥', msg:'Princípio de incêndio no galpão!', clicksNeeded:6, affectsDock:'none', chaosOnFail:20, scoreOnSuccess:30, timeLimit:8000},
+  {type:'blackout',  icon:'💡', msg:'Falta de energia em todo o galpão!', clicksNeeded:8, affectsDock:'all', chaosOnFail:25, scoreOnSuccess:35, timeLimit:11000},
+  {type:'spill',     icon:'🧯', msg:'Vazamento de produto', clicksNeeded:4, affectsDock:'single', chaosOnFail:12, scoreOnSuccess:20, timeLimit:8500}
+];
 
-        function addNewBoxToQueue() {
-            const template = boxTemplates[Math.floor(Math.random() * boxTemplates.length)];
-            availableBoxes.push({
-                ...template,
-                currentShape: JSON.parse(JSON.stringify(template.shape))
-            });
-        }
+var ACHIEVEMENTS = [
+  {id:'primeira_entrega', name:'Primeira Entrega', desc:'Complete 1 caminhão', icon:'🚚'},
+  {id:'dez_caminhoes', name:'Mão de Ferro', desc:'10 caminhões em 1 turno', icon:'💪'},
+  {id:'sobrevivente', name:'Sobrevivente', desc:'Sobreviva 3 minutos', icon:'⏱️'},
+  {id:'lenda_deposito', name:'Lenda do Depósito', desc:'Sobreviva 6 minutos', icon:'🏆'},
+  {id:'mestre_caos', name:'Mestre do Caos', desc:'Resolva 10 problemas', icon:'🧯'},
+  {id:'sequencia_perfeita', name:'Sequência Perfeita', desc:'8 entregas certas seguidas', icon:'🎯'},
+  {id:'nivel_5', name:'Gerente Experiente', desc:'Alcance o nível 5', icon:'📈'},
+  {id:'pontuacao_mil', name:'Mil Pontos', desc:'Alcance 1000 pontos', icon:'💰'}
+];
 
-        function renderQueue() {
-            const queueEl = document.getElementById('box-queue');
-            queueEl.innerHTML = '';
-            availableBoxes.forEach((box, index) => {
-                const boxDiv = document.createElement('div');
-                boxDiv.classList.add('draggable-box');
-                if (activeBoxIndex === index) boxDiv.classList.add('selected');
-                
-                // Dimensões visuais proporcionais
-                const rows = box.currentShape.length;
-                const cols = box.currentShape[0].length;
-                boxDiv.style.width = `${cols * 22 + 10}px`;
-                boxDiv.style.height = `${rows * 22 + 10}px`;
-                boxDiv.innerText = box.name.split(" ")[0];
+var DIFFICULTIES = {
+  facil:   {label:'Fácil',   spawnMult:1.35, timeMult:1.30, chaosMult:0.75},
+  normal:  {label:'Normal',  spawnMult:1.00, timeMult:1.00, chaosMult:1.00},
+  dificil: {label:'Difícil', spawnMult:0.72, timeMult:0.75, chaosMult:1.30}
+};
 
-                boxDiv.addEventListener('click', () => {
-                    activeBoxIndex = index;
-                    activeBoxRotation = 0;
-                    renderQueue();
-                });
-                queueEl.appendChild(boxDiv);
-            });
-        }
+var SAVE_KEY = 'caosOperacaoSave_v1';
 
-        function rotateActiveBox() {
-            if (activeBoxIndex === null) return;
-            const box = availableBoxes[activeBoxIndex];
-            const shape = box.currentShape;
-            const rows = shape.length;
-            const cols = shape[0].length;
+/* ================= SAVE / LOAD ================= */
+var memorySave = null; // fallback if localStorage unavailable
+function defaultSave(){
+  return {bestScore:0, bestTime:0, achievements:{}};
+}
+function loadSave(){
+  try{
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(raw) return Object.assign(defaultSave(), JSON.parse(raw));
+  }catch(e){}
+  return memorySave || defaultSave();
+}
+function persistSave(save){
+  memorySave = save;
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){}
+}
 
-            let rotated = Array(cols).fill(0).map(() => Array(rows).fill(0));
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    rotated[c][rows - 1 - r] = shape[r][c];
-                }
-            }
-            box.currentShape = rotated;
-            renderQueue();
-        }
+/* ================= AUDIO ================= */
+var audioCtx = null;
+var muted = false;
+function ensureAudio(){
+  if(audioCtx) return;
+  try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+}
+function playSound(type){
+  if(muted || !audioCtx) return;
+  try{
+    var freqMap = {click:520, success:880, fail:200, complete:1050, alert:440, levelup:1250, achievement:1500};
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.frequency.value = freqMap[type] || 500;
+    o.type = (type==='fail') ? 'sawtooth' : 'sine';
+    g.gain.value = 0.05;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.28);
+    o.stop(audioCtx.currentTime+0.3);
+  }catch(e){}
+}
 
-        function clearSelectedBox() {
-            if (activeBoxIndex === null) return;
-            availableBoxes.splice(activeBoxIndex, 1);
-            activeBoxIndex = null;
-            addNewBoxToQueue();
-            renderQueue();
-            addLog("Caixa descartada (penalidade de espaço).");
-            stress = Math.min(100, stress + 5);
-            updateStatsUI();
-        }
+/* ================= HELPERS ================= */
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function randInt(a,b){ return Math.floor(a + Math.random()*(b-a+1)); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function fmtTime(ms){
+  var s = Math.max(0, Math.floor(ms/1000));
+  var m = Math.floor(s/60); s = s%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function getLevel(score){ return 1 + Math.floor(score/300); }
+function unlockedDocks(level){ if(level>=6) return 5; if(level>=3) return 4; return 3; }
 
-        function handleCellClick(row, col) {
-            if (activeBoxIndex === null) return;
+/* ================= GAME STATE ================= */
+var G = null;
+var diffKey = 'normal';
+var tickInterval = null;
 
-            const box = availableBoxes[activeBoxIndex];
-            const shape = box.currentShape;
-            const rows = shape.length;
-            const cols = shape[0].length;
+function newGameState(){
+  return {
+    score:0, level:1, elapsed:0, chaos:0,
+    docks:[{truck:null,broken:false},{truck:null,broken:false},{truck:null,broken:false}],
+    queue:[], events:[],
+    selectedBoxId:null,
+    nextId:1,
+    trucksCompleted:0, problemsSolved:0, streak:0,
+    truckSpawnTimer:1500, boxSpawnTimer:800, eventSpawnTimer:9000,
+    paused:false, gameOver:false,
+    runAchievements:[]
+  };
+}
 
-            // Validação de Limites
-            if (row + rows > GRID_SIZE || col + cols > GRID_SIZE) {
-                alert("A caixa ultrapassa os limites do armazém!");
-                return;
-            }
+function diff(){ return DIFFICULTIES[diffKey]; }
 
-            // Validação de Colisão
-            let collision = false;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (shape[r][c] === 1 && gridData[row + r][col + c] !== 0) {
-                        collision = true;
-                    }
-                }
-            }
+function truckSpawnInterval(level){ return clamp(4600-level*150,1900,4600)*diff().spawnMult; }
+function boxSpawnInterval(level){ return clamp(2300-level*80,950,2300)*diff().spawnMult; }
+function truckTimeLimit(level){ return clamp(27000-level*900,13500,27000)*diff().timeMult; }
+function boxTimeLimit(level){ return clamp(9800-level*250,5000,9800)*diff().timeMult; }
+function eventSpawnInterval(level){ return clamp(13500-level*300,6500,13500)*diff().spawnMult; }
 
-            if (collision) {
-                alert("Espaço já ocupado ou bloqueado!");
-                return;
-            }
+/* ================= CORE ACTIONS ================= */
+function addChaos(v){ G.chaos = clamp(G.chaos + v*diff().chaosMult, 0, 100); }
+function addScore(v){ G.score += Math.round(v); }
 
-            // Posicionar Caixa no Grid
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (shape[r][c] === 1) {
-                        gridData[row + r][col + c] = box.type;
-                    }
-                }
-            }
+function syncDockCount(){
+  var n = unlockedDocks(G.level);
+  while(G.docks.length < n){ G.docks.push({truck:null, broken:false}); }
+}
 
-            score += 150 * level;
-            availableBoxes.splice(activeBoxIndex, 1);
-            activeBoxIndex = null;
-            addNewBoxToQueue();
-            renderQueue();
-            updateGridVisual();
-            updateStatsUI();
-            checkOrders(box.type);
-        }
+function checkLevelUp(){
+  var nl = getLevel(G.score);
+  if(nl > G.level){
+    G.level = nl;
+    syncDockCount();
+    showToast('⭐ Nível '+G.level+'! A operação está mais intensa...', 'level');
+    playSound('levelup');
+  }
+}
 
-        // Sistema de Pedidos e Docas
-        function generateOrder() {
-            if (orders.length >= 3) return;
-            const targetType = Math.floor(Math.random() * 3) + 1;
-            const typeNames = { 1: "Pequena (Tipo 1)", 2: "Média (Tipo 2)", 3: "Grande (Tipo 3)" };
-            
-            orders.push({
-                id: Math.random().toString(36.substr(2, 5)),
-                type: targetType,
-                name: typeNames[targetType],
-                timeLeft: 30 - (level * 2) // Fica mais rápido por nível
-            });
-            renderOrders();
-        }
+function unlockAchievement(id){
+  var save = loadSave();
+  if(save.achievements[id]) return;
+  save.achievements[id] = true;
+  persistSave(save);
+  G.runAchievements.push(id);
+  var a = ACHIEVEMENTS.filter(function(x){return x.id===id;})[0];
+  showAchievementToast(a);
+  playSound('achievement');
+}
 
-        function renderOrders() {
-            const container = document.getElementById('orders-container');
-            container.innerHTML = '';
-            orders.forEach((order, idx) => {
-                const percent = (order.timeLeft / 30) * 100;
-                const card = document.createElement('div');
-                card.className = `order-card ${order.timeLeft < 10 ? 'urgent' : ''}`;
-                card.innerHTML = `
-                    <div style="display:justify; display:flex; justify-content: space-between;">
-                        <span>📦 Pedido: ${order.name}</span>
-                        <span>⏱️ ${order.timeLeft}s</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${percent}%;"></div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
+function checkAchievements(){
+  var save = loadSave();
+  function chk(id, cond){ if(!save.achievements[id] && cond) unlockAchievement(id); }
+  chk('primeira_entrega', G.trucksCompleted>=1);
+  chk('dez_caminhoes', G.trucksCompleted>=10);
+  chk('sobrevivente', G.elapsed>=180000);
+  chk('lenda_deposito', G.elapsed>=360000);
+  chk('mestre_caos', G.problemsSolved>=10);
+  chk('sequencia_perfeita', G.streak>=8);
+  chk('nivel_5', G.level>=5);
+  chk('pontuacao_mil', G.score>=1000);
+}
 
-        function checkOrders(boxType) {
-            const index = orders.findIndex(o => o.type === boxType);
-            if (index !== -1) {
-                orders.splice(index, 1);
-                score += 300 * level;
-                stress = Math.max(0, stress - 10);
-                addLog(`Pedido despachado com sucesso! +${300 * level} pts`);
-                renderOrders();
-                checkLevelProgression();
-            }
-        }
+function spawnTruck(){
+  var maxDocks = unlockedDocks(G.level);
+  var candidates = [];
+  for(var i=0;i<maxDocks;i++){ if(G.docks[i] && !G.docks[i].truck && !G.docks[i].broken) candidates.push(i); }
+  if(candidates.length===0) return false;
+  var i2 = pick(candidates);
+  var type = pick(BOX_TYPES);
+  var needed = randInt(3, Math.min(4+Math.floor(G.level/2), 8));
+  var maxTime = truckTimeLimit(G.level);
+  G.docks[i2].truck = {typeId:type.id, icon:type.icon, name:type.name, fragile:type.fragile, needed:needed, delivered:0, timeLeft:maxTime, maxTime:maxTime};
+  return true;
+}
 
-        function checkLevelProgression() {
-            if (score >= level * 1500) {
-                level++;
-                addLog(`🎉 Parabéns! Operação promovida para o Nível ${level}!`);
-                triggerRandomObstacle();
-            }
-        }
+function spawnBox(){
+  if(G.queue.length>=8) return;
+  var type = pick(BOX_TYPES);
+  var maxTime = boxTimeLimit(G.level);
+  G.queue.push({id:G.nextId++, typeId:type.id, icon:type.icon, name:type.name, fragile:type.fragile, timeLeft:maxTime, maxTime:maxTime});
+}
 
-        function triggerRandomObstacle() {
-            // Adiciona um obstáculo aleatório no grid ao subir de nível
-            let r = Math.floor(Math.random() * GRID_SIZE);
-            let c = Math.floor(Math.random() * GRID_SIZE);
-            if (gridData[r][c] === 0) {
-                gridData[r][c] = 99; // 99 = Obstáculo fixo
-                updateGridVisual();
-                addLog("⚠️ Obstáculo estrutural detectado no armazém!");
-            }
-        }
+function maybeSpawnEvent(){
+  if(G.events.length>=2) return;
+  var type = pick(EVENT_TYPES);
+  var dockIndex = null;
+  if(type.affectsDock==='single'){
+    var maxDocks = unlockedDocks(G.level);
+    var cands = [];
+    for(var i=0;i<maxDocks;i++){ if(G.docks[i] && !G.docks[i].broken) cands.push(i); }
+    if(cands.length===0) return;
+    dockIndex = pick(cands);
+    G.docks[dockIndex].broken = true;
+  } else if(type.affectsDock==='all'){
+    for(var j=0;j<G.docks.length;j++) G.docks[j].broken = true;
+  }
+  var ev = {id:G.nextId++, type:type.type, icon:type.icon, msg:type.msg, clicksNeeded:type.clicksNeeded,
+            affectsDock:type.affectsDock, chaosOnFail:type.chaosOnFail, scoreOnSuccess:type.scoreOnSuccess,
+            dockIndex:dockIndex, clicksDone:0, timeLeft:type.timeLimit, maxTime:type.timeLimit};
+  G.events.push(ev);
+  var extra = dockIndex!=null ? (' — Doca '+(dockIndex+1)) : '';
+  showToast(type.icon+' '+type.msg+extra, 'warn');
+  playSound('alert');
+}
 
-        // Loop Principal do Tempo (Relógio, Pedidos, Eventos Caóticos)
-        function gameLoop() {
-            // Atualizar tempo dos pedidos
-            orders.forEach(order => {
-                order.timeLeft--;
-            });
+function expireBox(box){
+  G.queue = G.queue.filter(function(b){return b.id!==box.id;});
+  if(G.selectedBoxId===box.id) G.selectedBoxId=null;
+  addChaos(5);
+  G.streak = 0;
+}
 
-            // Remover pedidos expirados (causam estresse)
-            orders = orders.filter(order => {
-                if (order.timeLeft <= 0) {
-                    stress += 20;
-                    addLog("❌ Pedido cancelado por atraso! Estresse aumentou.");
-                    return false;
-                }
-                return true;
-            });
+function failTruck(dock){
+  addChaos(12);
+  G.streak = 0;
+  showToast('🚛 Um caminhão foi embora incompleto!', 'bad');
+  dock.truck = null;
+}
 
-            // Gerar novos pedidos periodicamente
-            if (Math.random() < 0.35 && orders.length < 3) {
-                generateOrder();
-            }
+function completeTruck(dock){
+  var timeBonus = Math.round(dock.truck.timeLeft/150);
+  addScore(50 + dock.truck.needed*5 + timeBonus);
+  G.trucksCompleted++;
+  addChaos(-4);
+  showToast('✅ Caminhão despachado com sucesso!', 'good');
+  playSound('complete');
+  dock.truck = null;
+  checkAchievements();
+}
 
-            // Eventos Caóticos Aleatórios
-            if (Math.random() < 0.08 && !eventActive) {
-                triggerChaosEvent();
-            }
+function failEvent(ev){
+  addChaos(ev.chaosOnFail);
+  if(ev.affectsDock==='single' && ev.dockIndex!=null && G.docks[ev.dockIndex]) G.docks[ev.dockIndex].broken=false;
+  if(ev.affectsDock==='all'){ for(var i=0;i<G.docks.length;i++) G.docks[i].broken=false; }
+  G.events = G.events.filter(function(e){return e.id!==ev.id;});
+  showToast('⚠️ Problema não resolvido a tempo!', 'bad');
+}
 
-            updateStatsUI();
-            renderOrders();
+function resolveEventClick(id){
+  if(G.paused || G.gameOver) return;
+  var ev = null;
+  for(var i=0;i<G.events.length;i++){ if(G.events[i].id===id){ ev=G.events[i]; break; } }
+  if(!ev) return;
+  ev.clicksDone++;
+  playSound('click');
+  if(ev.clicksDone>=ev.clicksNeeded){
+    addScore(ev.scoreOnSuccess);
+    addChaos(-3);
+    G.problemsSolved++;
+    if(ev.affectsDock==='single' && ev.dockIndex!=null && G.docks[ev.dockIndex]) G.docks[ev.dockIndex].broken=false;
+    if(ev.affectsDock==='all'){ for(var j=0;j<G.docks.length;j++) G.docks[j].broken=false; }
+    G.events = G.events.filter(function(e){return e.id!==ev.id;});
+    showToast('🔧 Problema resolvido!', 'good');
+    checkAchievements();
+  }
+  renderAll();
+}
 
-            // Condição de Derrota (Estresse 100% ou Grid Cheio)
-            if (stress >= 100 || isGridFull()) {
-                endGame();
-            }
-        }
+function selectBox(id){
+  if(G.paused || G.gameOver) return;
+  ensureAudio();
+  G.selectedBoxId = (G.selectedBoxId===id) ? null : id;
+  renderAll();
+}
 
-        function triggerChaosEvent() {
-            eventActive = true;
-            const banner = document.getElementById('event-banner');
-            banner.style.display = 'block';
-            
-            setTimeout(() => {
-                banner.style.display = 'none';
-                eventActive = false;
-            }, 6000);
-        }
+function handleDockClick(index){
+  if(G.paused || G.gameOver) return;
+  ensureAudio();
+  var dock = G.docks[index];
+  if(!dock) return;
+  if(dock.broken){ showToast('⚠️ Doca com problema — resolva antes de usar.', 'warn'); return; }
+  if(!dock.truck){ showToast('🅿️ Doca vazia — aguarde um caminhão chegar.', 'info'); return; }
+  if(G.selectedBoxId==null){ showToast('👆 Selecione uma caixa na fila primeiro.', 'info'); return; }
+  var box = null;
+  for(var i=0;i<G.queue.length;i++){ if(G.queue[i].id===G.selectedBoxId){ box=G.queue[i]; break; } }
+  if(!box){ G.selectedBoxId=null; renderAll(); return; }
 
-        function isGridFull() {
-            // Se não houver nenhum espaço vazio 0 no grid
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    if (gridData[r][c] === 0) return false;
-                }
-            }
-            return true;
-        }
+  if(box.typeId !== dock.truck.typeId){
+    G.queue = G.queue.filter(function(b){return b.id!==box.id;});
+    G.selectedBoxId = null;
+    G.streak = 0;
+    addChaos(8);
+    showToast('❌ Caixa errada entregue nessa doca!', 'bad');
+    playSound('fail');
+    renderAll();
+    return;
+  }
 
-        function updateStatsUI() {
-            document.getElementById('score').innerText = score;
-            document.getElementById('level').innerText = level;
-            document.getElementById('stress').innerText = stress;
-        }
+  G.queue = G.queue.filter(function(b){return b.id!==box.id;});
+  G.selectedBoxId = null;
+  dock.truck.delivered++;
+  G.streak++;
+  addScore(box.fragile ? 18 : 10);
+  playSound('success');
+  checkAchievements();
+  if(dock.truck.delivered >= dock.truck.needed){
+    completeTruck(dock);
+  }
+  renderAll();
+}
 
-        function addLog(text) {
-            const logBox = document.getElementById('log-box');
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            logBox.innerHTML = `<div>[${time}] ${text}</div>` + logBox.innerHTML;
-        }
+/* ================= TOASTS ================= */
+var toasts = [];
+var toastSeq = 1;
+function showToast(msg, type, ms){
+  ms = ms || 3000;
+  var id = toastSeq++;
+  toasts.push({id:id, msg:msg, type:type||'info'});
+  renderToasts();
+  setTimeout(function(){
+    toasts = toasts.filter(function(t){return t.id!==id;});
+    renderToasts();
+  }, ms);
+}
+function renderToasts(){
+  var layer = document.getElementById('toastLayer');
+  layer.innerHTML = toasts.map(function(t){
+    return '<div class="toast '+t.type+'">'+escapeHtml(t.msg)+'</div>';
+  }).join('');
+}
 
-        function endGame() {
-            clearInterval(gameInterval);
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('gameover-screen').classList.add('active');
+var achToasts = [];
+var achToastSeq = 1;
+function showAchievementToast(a){
+  if(!a) return;
+  var id = achToastSeq++;
+  achToasts.push({id:id, a:a});
+  renderAchToasts();
+  setTimeout(function(){
+    achToasts = achToasts.filter(function(t){return t.id!==id;});
+    renderAchToasts();
+  }, 4200);
+}
+function renderAchToasts(){
+  var layer = document.getElementById('achToastLayer');
+  layer.innerHTML = achToasts.map(function(t){
+    return '<div class="ach-toast"><div class="aticon">'+t.a.icon+'</div><div><div class="atlabel">Conquista desbloqueada</div><div class="atname">'+escapeHtml(t.a.name)+'</div></div></div>';
+  }).join('');
+}
 
-            document.getElementById('final-score').innerText = score;
-            document.getElementById('final-level').innerText = level;
+function escapeHtml(s){
+  var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
 
-            let isNewRecord = false;
-            if (score > highscore) {
-                highscore = score;
-                localStorage.setItem('tetris_estoque_record', highscore);
-                isNewRecord = true;
-                document.getElementById('menu-highscore').innerText = highscore;
-            }
-            document.getElementById('final-record').innerText = isNewRecord ? "Sim! Novo Recorde! 🏆" : "Não";
-        }
-    </script>
+/* ================= TICK LOOP ================= */
+function tick(){
+  if(G.paused || G.gameOver) return;
+  var dt = 100;
+  G.elapsed += dt;
+
+  for(var i=0;i<G.docks.length;i++){
+    var d = G.docks[i];
+    if(d.truck){
+      d.truck.timeLeft -= dt;
+      if(d.truck.timeLeft <= 0) failTruck(d);
+    }
+  }
+
+  for(var j=0;j<G.queue.length;j++){ G.queue[j].timeLeft -= dt; }
+  var expired = G.queue.filter(function(b){return b.timeLeft<=0;});
+  expired.forEach(expireBox);
+
+  for(var k=0;k<G.events.length;k++){ G.events[k].timeLeft -= dt; }
+  var failedEvents = G.events.filter(function(e){return e.timeLeft<=0;});
+  failedEvents.forEach(failEvent);
+
+  G.truckSpawnTimer -= dt;
+  if(G.truckSpawnTimer <= 0){
+    var spawned = spawnTruck();
+    G.truckSpawnTimer = spawned ? truckSpawnInterval(G.level) : 1200;
+  }
+  G.boxSpawnTimer -= dt;
+  if(G.boxSpawnTimer <= 0){
+    spawnBox();
+    G.boxSpawnTimer = boxSpawnInterval(G.level);
+  }
+  G.eventSpawnTimer -= dt;
+  if(G.eventSpawnTimer <= 0){
+    maybeSpawnEvent();
+    G.eventSpawnTimer = eventSpawnInterval(G.level);
+  }
+
+  addChaos(-0.05);
+  checkLevelUp();
+  checkAchievements();
+
+  if(G.chaos >= 100){
+    endGame('O medidor de caos chegou a 100%. O depósito parou.');
+    return;
+  }
+  renderAll();
+}
+
+/* ================= RENDER ================= */
+function renderHud(){
+  document.getElementById('scoreVal').textContent = G.score;
+  document.getElementById('levelVal').textContent = G.level;
+  document.getElementById('timerVal').textContent = fmtTime(G.elapsed);
+  var levelBase = (G.level-1)*300;
+  var pct = clamp(((G.score-levelBase)/300)*100,0,100);
+  document.getElementById('levelBarFill').style.width = pct+'%';
+
+  var chaosFill = document.getElementById('chaosBarFill');
+  chaosFill.style.width = G.chaos+'%';
+  chaosFill.className = 'chaos-bar-fill' + (G.chaos>=75?' high':(G.chaos>=40?' mid':''));
+  document.getElementById('chaosPct').textContent = Math.round(G.chaos)+'%';
+}
+
+function renderDocks(){
+  var grid = document.getElementById('docksGrid');
+  var maxUnlocked = unlockedDocks(G.level);
+  var html = '';
+  var totalSlots = Math.max(5, G.docks.length);
+  for(var i=0;i<totalSlots;i++){
+    if(i >= maxUnlocked){
+      var reqLevel = (i===3)?3:5;
+      html += '<div class="dock-card locked"><div style="font-size:22px;">🔒</div>' +
+        '<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Doca '+(i+1)+'<br>Libera no nível '+reqLevel+'</div></div>';
+      continue;
+    }
+    var dock = G.docks[i] || {truck:null, broken:false};
+    var cls = 'dock-card' + (dock.truck?' has-truck':'') + (dock.broken?' broken':'');
+    html += '<div class="'+cls+'" data-dock="'+i+'">';
+    html += '<div class="dock-head"><span class="dock-name">DOCA '+(i+1)+'</span>' +
+            '<span class="dock-status">'+(dock.broken?'PARADA':(dock.truck?'ATIVA':'LIVRE'))+'</span></div>';
+    if(dock.broken){
+      html += '<div class="broken-overlay"><div class="bicon">⚠️</div><div class="btext">Resolva o problema no topo da tela</div></div>';
+    } else if(dock.truck){
+      var t = dock.truck;
+      var tpct = clamp((t.timeLeft/t.maxTime)*100,0,100);
+      var tcls = tpct<25?'low':(tpct<55?'mid':'');
+      var dots = '';
+      for(var k=0;k<t.needed;k++){ dots += '<div class="truck-dot'+(k<t.delivered?' filled':'')+'">'+(k<t.delivered?'✓':'')+'</div>'; }
+      html += '<div class="truck-box">' +
+                '<div class="truck-top"><div class="truck-icon">'+t.icon+'</div>' +
+                  '<div><div class="truck-name">'+t.name+(t.fragile?' 🍷':'')+'</div>' +
+                  '<div class="truck-count">'+t.delivered+'/'+t.needed+'</div></div></div>' +
+                '<div class="truck-dots">'+dots+'</div>' +
+                '<div class="timer-track"><div class="timer-fill '+tcls+'" style="width:'+tpct+'%"></div></div>' +
+              '</div>';
+    } else {
+      html += '<div class="dock-empty"><div class="de-icon">🅿️</div>Vago<br>aguardando caminhão</div>';
+    }
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+
+  var cards = grid.querySelectorAll('.dock-card[data-dock]');
+  cards.forEach(function(card){
+    card.addEventListener('click', function(){ handleDockClick(parseInt(this.getAttribute('data-dock'),10)); });
+  });
+}
+
+function renderQueue(){
+  var row = document.getElementById('queueRow');
+  if(G.queue.length===0){
+    row.innerHTML = '<div class="queue-empty">Nenhum pedido no momento — aguarde novas caixas chegarem.</div>';
+    return;
+  }
+  var html = '';
+  G.queue.forEach(function(box){
+    var pct = clamp((box.timeLeft/box.maxTime)*100,0,100);
+    var sel = box.id===G.selectedBoxId ? ' selected' : '';
+    var frag = box.fragile ? ' fragile' : '';
+    html += '<div class="box-card'+sel+frag+'" data-box="'+box.id+'">' +
+              '<div class="bx-icon">'+box.icon+'</div>' +
+              '<div class="bx-name">'+box.name+'</div>' +
+              '<div class="bx-timer"><div class="bx-timer-fill" style="width:'+pct+'%"></div></div>' +
+            '</div>';
+  });
+  row.innerHTML = html;
+  row.querySelectorAll('.box-card').forEach(function(card){
+    card.addEventListener('click', function(){ selectBox(parseInt(this.getAttribute('data-box'),10)); });
+  });
+}
+
+function renderEvents(){
+  var layer = document.getElementById('eventsLayer');
+  var html = '';
+  G.events.forEach(function(ev){
+    var tpct = clamp((ev.timeLeft/ev.maxTime)*100,0,100);
+    var ppct = clamp((ev.clicksDone/ev.clicksNeeded)*100,0,100);
+    html += '<div class="event-card">' +
+              '<div class="event-top"><div class="event-icon">'+ev.icon+'</div><div class="event-msg">'+escapeHtml(ev.msg)+(ev.dockIndex!=null?' (Doca '+(ev.dockIndex+1)+')':'')+'</div></div>' +
+              '<div class="event-timer-track"><div class="event-timer-fill" style="width:'+tpct+'%"></div></div>' +
+              '<div class="event-bottom">' +
+                '<div class="event-progress"><div class="event-progress-fill" style="width:'+ppct+'%"></div></div>' +
+                '<button class="event-resolve-btn" data-ev="'+ev.id+'">Resolver</button>' +
+              '</div>' +
+            '</div>';
+  });
+  layer.innerHTML = html;
+  layer.querySelectorAll('.event-resolve-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ resolveEventClick(parseInt(this.getAttribute('data-ev'),10)); });
+  });
+}
+
+function renderAll(){
+  renderHud();
+  renderDocks();
+  renderQueue();
+  renderEvents();
+}
+
+/* ================= START SCREEN RENDER ================= */
+function renderStartScreen(){
+  var save = loadSave();
+  document.getElementById('bestScoreDisplay').textContent = save.bestScore || 0;
+  document.getElementById('bestTimeDisplay').textContent = fmtTime(save.bestTime || 0);
+  var unlockedCount = Object.keys(save.achievements||{}).length;
+  document.getElementById('achCountDisplay').textContent = unlockedCount+'/'+ACHIEVEMENTS.length;
+
+  var grid = document.getElementById('achGrid');
+  grid.innerHTML = ACHIEVEMENTS.map(function(a){
+    var unlocked = !!save.achievements[a.id];
+    return '<div class="ach-card'+(unlocked?' unlocked':'')+'">' +
+             '<div class="aicon">'+(unlocked?a.icon:'🔒')+'</div>' +
+             '<div class="aname">'+a.name+'</div>' +
+             '<div class="adesc">'+a.desc+'</div>' +
+           '</div>';
+  }).join('');
+}
+
+/* ================= SCREEN CONTROL ================= */
+function showScreen(id){
+  ['startScreen','gameScreen','gameOverScreen'].forEach(function(s){
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+
+function startGame(){
+  ensureAudio();
+  G = newGameState();
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  showScreen('gameScreen');
+  renderAll();
+  if(tickInterval) clearInterval(tickInterval);
+  tickInterval = setInterval(tick, 100);
+}
+
+function endGame(reason){
+  G.gameOver = true;
+  if(tickInterval){ clearInterval(tickInterval); tickInterval=null; }
+  var save = loadSave();
+  var isRecord = G.score > (save.bestScore||0);
+  if(isRecord) save.bestScore = G.score;
+  if(G.elapsed > (save.bestTime||0)) save.bestTime = G.elapsed;
+  persistSave(save);
+
+  document.getElementById('goReason').textContent = reason || 'A operação foi encerrada.';
+  document.getElementById('goRecordBadge').classList.toggle('hidden', !isRecord);
+  document.getElementById('goScore').textContent = G.score;
+  document.getElementById('goTime').textContent = fmtTime(G.elapsed);
+  document.getElementById('goTrucks').textContent = G.trucksCompleted;
+  document.getElementById('goLevel').textContent = G.level;
+
+  var achList = document.getElementById('goAchList');
+  if(G.runAchievements.length===0){
+    achList.innerHTML = '';
+  } else {
+    achList.innerHTML = G.runAchievements.map(function(id){
+      var a = ACHIEVEMENTS.filter(function(x){return x.id===id;})[0];
+      if(!a) return '';
+      return '<div class="go-ach-chip">'+a.icon+' '+a.name+'</div>';
+    }).join('');
+  }
+  showScreen('gameOverScreen');
+}
+
+/* ================= EVENT WIRING ================= */
+document.getElementById('diffRow').addEventListener('click', function(e){
+  var btn = e.target.closest('.diff-btn');
+  if(!btn) return;
+  diffKey = btn.getAttribute('data-diff');
+  document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+});
+
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('retryBtn').addEventListener('click', startGame);
+document.getElementById('menuBtn').addEventListener('click', function(){ renderStartScreen(); showScreen('startScreen'); });
+
+document.getElementById('howtoToggle').addEventListener('click', function(){
+  var body = document.getElementById('howtoBody');
+  var open = body.classList.toggle('open');
+  document.getElementById('howtoArrow').textContent = open ? '－' : '＋';
+});
+
+document.getElementById('pauseBtn').addEventListener('click', function(){
+  if(!G || G.gameOver) return;
+  G.paused = true;
+  document.getElementById('pauseOverlay').classList.remove('hidden');
+});
+document.getElementById('resumeBtn').addEventListener('click', function(){
+  if(!G) return;
+  G.paused = false;
+  document.getElementById('pauseOverlay').classList.add('hidden');
+});
+
+document.getElementById('muteBtn').addEventListener('click', function(){
+  muted = !muted;
+  this.textContent = muted ? '🔇' : '🔊';
+});
+
+/* ================= INIT ================= */
+renderStartScreen();
+showScreen('startScreen');
+
+})();
+</script>
 </body>
 </html>
