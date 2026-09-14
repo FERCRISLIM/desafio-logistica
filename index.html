@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio da Logística</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            background: linear-gradient(to bottom, #1e293b, #0f172a);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .screen {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Menu & Configurações */
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+            max-width: 250px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+        }
+        .btn-secondary:hover {
+            background-color: #334155;
+        }
+
+        .diff-selector {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .diff-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #475569;
+            background: transparent;
+            color: var(--text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .diff-btn.active {
+            border-color: var(--accent);
+            background-color: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+        }
+
+        /* Jogo Ativo */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: #0f172a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .timer-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .timer-bar {
+            height: 100%;
+            background: var(--success);
+            width: 100%;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        .conveyor-belt {
+            width: 100%;
+            background: #0f172a;
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Caixa Principal */
+        .box {
+            width: 90px;
+            height: 90px;
+            background: #d97706;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            border: 2px solid #b45309;
+            cursor: grab;
+            transition: transform 0.1s;
+            position: relative;
+        }
+
+        .box-icon {
+            font-size: 2rem;
+        }
+
+        .box-dest {
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Botões de Destino (Setores) */
+        .destinations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .dest-btn {
+            background: #334155;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            padding: 15px 5px;
+            color: var(--text);
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .dest-btn:hover {
+            background: #475569;
+            border-color: var(--accent);
+        }
+
+        .dest-btn:active {
+            transform: scale(0.95);
+        }
+
+        .dest-icon {
+            font-size: 1.5rem;
+        }
+
+        .dest-name {
+            font-size: 0.75rem;
+        }
+
+        /* Estatísticas e Fim de Jogo */
+        .stats-box {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: center;
+        }
+
+        /* Espaço Reservado para AdSense (Monetização) */
+        .adsense-container {
+            width: 100%;
+            background: #111827;
+            border: 1px dashed #374151;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>📦 Desafio da Logística</h1>
+            <div class="subtitle">Otimize a esteira e gerencie os despachos</div>
+        </header>
+
+        <!-- TELA DO MENU INICIAL -->
+        <div id="menu-screen" class="screen">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Escolha a Dificuldade:</p>
+                <div class="diff-selector">
+                    <button class="diff-btn active" onclick="setDifficulty('easy')">Fácil</button>
+                    <button class="diff-btn" onclick="setDifficulty('medium')">Médio</button>
+                    <button class="diff-btn" onclick="setDifficulty('hard')">Difícil</button>
+                </div>
+            </div>
+
+            <button class="btn" onclick="startGame()">Iniciar Turno</button>
+            
+            <div class="stats-box">
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Recorde Pessoal:</span>
+                <span id="menu-highscore" style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">0 pts</span>
+            </div>
+        </div>
+
+        <!-- TELA DO JOGO -->
+        <div id="game-screen" class="screen hidden">
+            <div class="game-header">
+                <div>Pontos: <span id="current-score">0</span></div>
+                <div>Recorde: <span id="current-high">0</span></div>
+            </div>
+
+            <div class="timer-bar-container">
+                <div id="timer-bar" class="timer-bar"></div>
+            </div>
+
+            <div class="conveyor-belt">
+                <div id="active-box" class="box">
+                    <span id="box-icon" class="box-icon">📦</span>
+                    <span id="box-dest" class="box-dest">NORTE</span>
+                </div>
+            </div>
+
+            <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">Para qual setor vai esta carga?</p>
+
+            <div class="destinations-grid">
+                <button class="dest-btn" onclick="checkAnswer('NORTE')">
+                    <span class="dest-icon">⬆️</span>
+                    <span class="dest-name">Norte</span>
+                </button>
+                <button class="dest-btn" onclick="checkAnswer('SUL')">
+                    <span class="dest-icon">⬇️</span>
+                    <span class="dest-name">Sul</span>
+                </button>
+                <button class="dest-btn" onclick="checkAnswer('LESTE')">
+                    <span class="dest-icon">➡️</span>
+                    <span class="dest-name">Leste</span>
+                </button>
+                <button class="dest-btn" onclick="checkAnswer('OESTE')">
+                    <span class="dest-icon">⬅️</span>
+                    <span class="dest-name">Oeste</span>
+                </button>
+                <button class="dest-btn" onclick="checkAnswer('CENTRO')">
+                    <span class="dest-icon">🏢</span>
+                    <span class="dest-name">Centro</span>
+                </button>
+                <button class="dest-btn" onclick="checkAnswer('EXTERIOR')">
+                    <span class="dest-icon">✈️</span>
+                    <span class="dest-name">Exterior</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA DE FIM DE JOGO -->
+        <div id="gameover-screen" class="screen hidden">
+            <h2 id="gameover-title" style="color: var(--danger);">Turno Encerrado!</h2>
+            
+            <div class="stats-box">
+                <div>Caixas Despachadas: <span id="final-score" style="font-weight: bold; color: var(--accent);">0</span></div>
+                <div>Novo Recorde: <span id="final-record-msg" style="color: var(--success); font-weight: bold;"></span></div>
+            </div>
+
+            <button class="btn" onclick="startGame()">Novo Turno</button>
+            <button class="btn btn-secondary" onclick="returnToMenu()">Menu Principal</button>
+        </div>
+
+        <!-- ESPAÇO RESERVADO PARA GOOGLE ADSENSE (Fácil integração futura) -->
+        <div class="adsense-container">
+            <!-- Cole o código do Google AdSense aqui futuramente (ex: <ins class="adsbygoogle" ...></ins>) -->
+            Espaço Publicitário Reservado (Google AdSense)
+        </div>
+    </div>
+
+    <script>
+        // Configurações e Estado do Jogo
+        const sectors = [
+            { name: 'NORTE', icon: '📦' },
+            { name: 'SUL', icon: '📦' },
+            { name: 'LESTE', icon: '📦' },
+            { name: 'OESTE', icon: '📦' },
+            { name: 'CENTRO', icon: '🏢' },
+            { name: 'EXTERIOR', icon: '✈️' }
+        ];
+
+        const difficulties = {
+            easy: { time: 4.5, name: 'Fácil' },
+            medium: { time: 3.0, name: 'Médio' },
+            hard: { time: 2.0, name: 'Difícil' }
+        };
+
+        let currentDiff = 'easy';
+        let score = 0;
+        let highscore = localStorage.getItem('logistics_highscore') || 0;
+        let currentBox = null;
+        let timerInterval = null;
+        let timeLeft = 0;
+        let totalTime = 0;
+        let isPlaying = false;
+
+        // Inicialização de UI
+        document.getElementById('menu-highscore').innerText = highscore + ' pts';
+
+        function setDifficulty(diff) {
+            currentDiff = diff;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'success') {
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === 'gameover') {
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                }
+            } catch (e) {
+                // Áudio bloqueado ou não suportado antes da primeira interação
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            isPlaying = true;
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            document.getElementById('current-score').innerText = score;
+            document.getElementById('current-high').innerText = highscore;
+
+            nextBox();
+        }
+
+        function nextBox() {
+            if (!isPlaying) return;
+
+            // Selecionar destino aleatório
+            const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
+            currentBox = randomSector;
+
+            document.getElementById('box-icon').innerText = currentBox.icon;
+            document.getElementById('box-dest').innerText = currentBox.name;
+
+            // Configurar tempo baseado na dificuldade
+            totalTime = difficulties[currentDiff].time * 1000;
+            timeLeft = totalTime;
+            
+            clearInterval(timerInterval);
+            const startTime = Date.now();
+
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                timeLeft = Math.max(0, totalTime - elapsed);
+                
+                const percentage = (timeLeft / totalTime) * 100;
+                const bar = document.getElementById('timer-bar');
+                bar.style.width = percentage + '%';
+
+                if (percentage < 30) {
+                    bar.style.backgroundColor = 'var(--danger)';
+                } else {
+                    bar.style.backgroundColor = 'var(--success)';
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver();
+                }
+            }, 50);
+        }
+
+        function checkAnswer(selectedSector) {
+            if (!isPlaying) return;
+
+            if (selectedSector === currentBox.name) {
+                score++;
+                playSound('success');
+                document.getElementById('current-score').innerText = score;
+                nextBox();
+            } else {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            playSound('gameover');
+
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            let recordMsg = '';
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('logistics_highscore', highscore);
+                document.getElementById('menu-highscore').innerText = highscore + ' pts';
+                recordMsg = '🎉 Novo Recorde!';
+            } else {
+                recordMsg = `Recorde atual: ${highscore}`;
+            }
+            document.getElementById('final-record-msg').innerText = recordMsg;
+        }
+
+        function returnToMenu() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
