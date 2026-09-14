@@ -1,19 +1,23 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desafio da Logística</title>
+    <title>Desafio Logístico: Operação Canalização & Manga</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --panel-bg: #1e293b;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --accent: #ff6600; /* Laranja estilo DHL/Logística */
+            --accent-hover: #e55b00;
+            --success: #238636;
+            --danger: #da3633;
+            --text: #f0f6fc;
+            --text-muted: #8b949e;
+            --hend: #1f6feb; /* Azul do Hend / Scanner */
+            --rend: #a371f7; /* Roxo do Rend / Leitor */
         }
 
         * {
@@ -32,37 +36,36 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow-x: hidden;
             padding: 10px;
         }
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             background-color: var(--panel-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #334155;
+            border: 1px solid var(--border-color);
         }
 
         header {
-            padding: 20px;
+            padding: 15px 20px;
             text-align: center;
-            border-bottom: 1px solid #334155;
-            background: linear-gradient(to bottom, #1e293b, #0f172a);
+            border-bottom: 1px solid var(--border-color);
+            background: #21262d;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: var(--accent);
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .subtitle {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
         }
 
@@ -70,17 +73,17 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
+            min-height: 440px;
         }
 
         .hidden {
             display: none !important;
         }
 
-        /* Menu & Configurações */
+        /* Botões Gerais */
         .btn {
             background-color: var(--accent);
             color: white;
@@ -92,7 +95,7 @@
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
             width: 100%;
-            max-width: 250px;
+            max-width: 260px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
@@ -105,169 +108,220 @@
         }
 
         .btn-secondary {
-            background-color: #475569;
+            background-color: #30363d;
         }
         .btn-secondary:hover {
-            background-color: #334155;
+            background-color: #484f58;
         }
 
-        .diff-selector {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .diff-btn {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #475569;
-            background: transparent;
-            color: var(--text);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-
-        .diff-btn.active {
-            border-color: var(--accent);
-            background-color: rgba(59, 130, 246, 0.2);
-            color: var(--accent);
-        }
-
-        /* Jogo Ativo */
-        .game-header {
+        /* Painel de Jogo Operacional */
+        .ops-header {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            background: #0f172a;
+            background: #21262d;
             padding: 10px 15px;
             border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: bold;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
         }
 
-        .timer-bar-container {
+        /* Status do Scanner (Mecânica Central) */
+        .scanner-status-box {
             width: 100%;
-            height: 8px;
-            background: #334155;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .timer-bar {
-            height: 100%;
-            background: var(--success);
-            width: 100%;
-            transition: width 0.1s linear, background-color 0.3s;
-        }
-
-        .conveyor-belt {
-            width: 100%;
-            background: #0f172a;
-            border: 2px dashed #475569;
-            border-radius: 12px;
-            height: 140px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        /* Caixa Principal */
-        .box {
-            width: 90px;
-            height: 90px;
-            background: #d97706;
+            background: #21262d;
+            border: 2px solid var(--border-color);
             border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            border: 2px solid #b45309;
-            cursor: grab;
-            transition: transform 0.1s;
-            position: relative;
-        }
-
-        .box-icon {
-            font-size: 2rem;
-        }
-
-        .box-dest {
-            font-size: 0.75rem;
-            background: rgba(0,0,0,0.4);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        /* Botões de Destino (Setores) */
-        .destinations-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            width: 100%;
-        }
-
-        .dest-btn {
-            background: #334155;
-            border: 2px solid #475569;
-            border-radius: 10px;
-            padding: 15px 5px;
-            color: var(--text);
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.15s;
-        }
-
-        .dest-btn:hover {
-            background: #475569;
-            border-color: var(--accent);
-        }
-
-        .dest-btn:active {
-            transform: scale(0.95);
-        }
-
-        .dest-icon {
-            font-size: 1.5rem;
-        }
-
-        .dest-name {
-            font-size: 0.75rem;
-        }
-
-        /* Estatísticas e Fim de Jogo */
-        .stats-box {
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 8px;
-            width: 100%;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             text-align: center;
         }
 
-        /* Espaço Reservado para AdSense (Monetização) */
+        .step-indicators {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .step-badge {
+            flex: 1;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: #30363d;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+        }
+
+        .step-badge.active {
+            border-color: var(--accent);
+            color: var(--text);
+            background: rgba(255, 102, 0, 0.15);
+        }
+
+        .step-badge.done {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Área da Caixa / Volume na Esteira */
+        .cargo-bay {
+            width: 100%;
+            background: #0d1117;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            position: relative;
+        }
+
+        .cargo-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cargo-id {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .cargo-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .cargo-dest-tag {
+            background: #30363d;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            width: fit-content;
+            font-weight: bold;
+        }
+
+        /* Ações de Bipagem */
+        .scanning-panel {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .scan-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .scan-btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-rend { background-color: var(--rend); }
+        .btn-hend { background-color: var(--hend); }
+
+        .scan-btn span {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        /* Grade de Canalizações / Mangas */
+        .chutes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .chute-btn {
+            background: #21262d;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 5px;
+            color: var(--text);
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+
+        .chute-btn:hover {
+            border-color: var(--accent);
+            background: #30363d;
+        }
+
+        .chute-btn:active {
+            transform: scale(0.95);
+        }
+
+        .chute-code {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .chute-name {
+            font-size: 0.8rem;
+        }
+
+        /* Barra de Tempo Operacional */
+        .timer-container {
+            width: 100%;
+            height: 6px;
+            background: #30363d;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: var(--success);
+            width: 100%;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        .stats-box {
+            background: #21262d;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
         .adsense-container {
             width: 100%;
-            background: #111827;
-            border: 1px dashed #374151;
-            padding: 10px;
+            background: #0d1117;
+            border: 1px dashed #30363d;
+            padding: 8px;
             text-align: center;
-            font-size: 0.75rem;
-            color: #6b7280;
-            min-height: 50px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -287,130 +341,139 @@
 
     <div class="container">
         <header>
-            <h1>📦 Desafio da Logística</h1>
-            <div class="subtitle">Otimize a esteira e gerencie os despachos</div>
+            <h1>📦 Operação Logística: Canal & Manga</h1>
+            <div class="subtitle">Bipagem de Cargas • Rend ➔ Hend ➔ Manga</div>
         </header>
 
-        <!-- TELA DO MENU INICIAL -->
+        <!-- MENU INICIAL -->
         <div id="menu-screen" class="screen">
-            <div style="text-align: center; margin-bottom: 10px;">
-                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Escolha a Dificuldade:</p>
-                <div class="diff-selector">
-                    <button class="diff-btn active" onclick="setDifficulty('easy')">Fácil</button>
-                    <button class="diff-btn" onclick="setDifficulty('medium')">Médio</button>
-                    <button class="diff-btn" onclick="setDifficulty('hard')">Difícil</button>
+            <div style="text-align: center; width: 100%;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Selecione o Turno / Ritmo:</p>
+                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 15px;">
+                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer;" onclick="setDifficulty('easy', this)">Normal (6s)</button>
+                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer; background: #30363d;" onclick="setDifficulty('medium', this)">Intenso (4.5s)</button>
+                    <button class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: white; cursor: pointer;" onclick="setDifficulty('hard', this)">Rush Hub (3s)</button>
                 </div>
             </div>
 
-            <button class="btn" onclick="startGame()">Iniciar Turno</button>
+            <button class="btn" onclick="startGame()">Entrar em Turno</button>
             
             <div class="stats-box">
-                <span style="font-size: 0.85rem; color: var(--text-muted);">Recorde Pessoal:</span>
-                <span id="menu-highscore" style="font-size: 1.2rem; font-weight: bold; color: var(--accent);">0 pts</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Recorde de Despachos:</span>
+                <span id="menu-highscore" style="font-size: 1.1rem; font-weight: bold; color: var(--accent);">0 volumes</span>
             </div>
         </div>
 
-        <!-- TELA DO JOGO -->
+        <!-- TELA DE JOGO ATIVO -->
         <div id="game-screen" class="screen hidden">
-            <div class="game-header">
-                <div>Pontos: <span id="current-score">0</span></div>
+            <div class="ops-header">
+                <div>Volumes: <span id="current-score" style="color: var(--accent); font-weight: bold;">0</span></div>
                 <div>Recorde: <span id="current-high">0</span></div>
             </div>
 
-            <div class="timer-bar-container">
-                <div id="timer-bar" class="timer-bar"></div>
+            <div class="timer-container">
+                <div id="timer-bar" class="timer-fill"></div>
             </div>
 
-            <div class="conveyor-belt">
-                <div id="active-box" class="box">
-                    <span id="box-icon" class="box-icon">📦</span>
-                    <span id="box-dest" class="box-dest">NORTE</span>
+            <!-- STATUS DO FLUXO DE BASTIDOR -->
+            <div class="scanner-status-box">
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Fluxo Operacional Obrigatório:</div>
+                <div class="step-indicators">
+                    <div id="step-rend" class="step-badge active">1. Bipar Rend</div>
+                    <div id="step-hend" class="step-badge">2. Bipar Hend</div>
+                    <div id="step-chute" class="step-badge">3. Despachar Manga</div>
                 </div>
             </div>
 
-            <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">Para qual setor vai esta carga?</p>
+            <!-- CAIXA / VOLUME NA ESTEIRA -->
+            <div class="cargo-bay">
+                <div class="cargo-info">
+                    <span id="cargo-id" class="cargo-id">PKG-98241</span>
+                    <span id="cargo-title" class="cargo-title">Caixa Grande (Paletizada)</span>
+                    <span id="cargo-dest" class="cargo-dest-tag">MANGA 03 - SP METRO</span>
+                </div>
+                <div style="font-size: 2.2rem;">📦</div>
+            </div>
 
-            <div class="destinations-grid">
-                <button class="dest-btn" onclick="checkAnswer('NORTE')">
-                    <span class="dest-icon">⬆️</span>
-                    <span class="dest-name">Norte</span>
+            <!-- BOTÕES DE BLASTER / SCANNERS (REND / HEND) -->
+            <div class="scanning-panel" id="scanner-actions">
+                <button class="scan-btn btn-rend" onclick="performScan('rend')">
+                    📡 Bipar com REND
+                    <span>Leitor de Lote / ID</span>
                 </button>
-                <button class="dest-btn" onclick="checkAnswer('SUL')">
-                    <span class="dest-icon">⬇️</span>
-                    <span class="dest-name">Sul</span>
+                <button class="scan-btn btn-hend" onclick="performScan('hend')" id="btn-hend-el" style="opacity: 0.5;">
+                    📲 Bipar com HEND
+                    <span>Terminal Manual</span>
                 </button>
-                <button class="dest-btn" onclick="checkAnswer('LESTE')">
-                    <span class="dest-icon">➡️</span>
-                    <span class="dest-name">Leste</span>
-                </button>
-                <button class="dest-btn" onclick="checkAnswer('OESTE')">
-                    <span class="dest-icon">⬅️</span>
-                    <span class="dest-name">Oeste</span>
-                </button>
-                <button class="dest-btn" onclick="checkAnswer('CENTRO')">
-                    <span class="dest-icon">🏢</span>
-                    <span class="dest-name">Centro</span>
-                </button>
-                <button class="dest-btn" onclick="checkAnswer('EXTERIOR')">
-                    <span class="dest-icon">✈️</span>
-                    <span class="dest-name">Exterior</span>
-                </button>
+            </div>
+
+            <!-- GRADE DE CANALIZAÇÕES (MANGAS) -->
+            <div class="chutes-grid" id="chutes-container">
+                <!-- Preenchido via Script -->
             </div>
         </div>
 
         <!-- TELA DE FIM DE JOGO -->
         <div id="gameover-screen" class="screen hidden">
-            <h2 id="gameover-title" style="color: var(--danger);">Turno Encerrado!</h2>
+            <h2 id="gameover-title" style="color: var(--danger);">Falha no Processo / Estouro de Tempo!</h2>
             
             <div class="stats-box">
-                <div>Caixas Despachadas: <span id="final-score" style="font-weight: bold; color: var(--accent);">0</span></div>
-                <div>Novo Recorde: <span id="final-record-msg" style="color: var(--success); font-weight: bold;"></span></div>
+                <div>Volumes Canalizados: <span id="final-score" style="font-weight: bold; color: var(--accent);">0</span></div>
+                <div>Status do Recorde: <span id="final-record-msg" style="color: var(--success); font-weight: bold;"></span></div>
             </div>
 
             <button class="btn" onclick="startGame()">Novo Turno</button>
             <button class="btn btn-secondary" onclick="returnToMenu()">Menu Principal</button>
         </div>
 
-        <!-- ESPAÇO RESERVADO PARA GOOGLE ADSENSE (Fácil integração futura) -->
         <div class="adsense-container">
-            <!-- Cole o código do Google AdSense aqui futuramente (ex: <ins class="adsbygoogle" ...></ins>) -->
             Espaço Publicitário Reservado (Google AdSense)
         </div>
     </div>
 
     <script>
-        // Configurações e Estado do Jogo
-        const sectors = [
-            { name: 'NORTE', icon: '📦' },
-            { name: 'SUL', icon: '📦' },
-            { name: 'LESTE', icon: '📦' },
-            { name: 'OESTE', icon: '📦' },
-            { name: 'CENTRO', icon: '🏢' },
-            { name: 'EXTERIOR', icon: '✈️' }
+        // Definição das Canalizações / Mangas do Hub
+        const chutesList = [
+            { id: 'M01', name: 'Manga 01', zone: 'NORTE (SPO)' },
+            { id: 'M02', name: 'Manga 02', zone: 'SUL (PR/SC)' },
+            { id: 'M03', name: 'Manga 03', zone: 'SP METRO' },
+            { id: 'M04', name: 'Manga 04', zone: 'NORDESTE' },
+            { id: 'M05', name: 'Manga 05', zone: 'INTERIOR' },
+            { id: 'M06', name: 'Manga 06', zone: 'INTERNACIONAL' }
         ];
 
         const difficulties = {
-            easy: { time: 4.5, name: 'Fácil' },
-            medium: { time: 3.0, name: 'Médio' },
-            hard: { time: 2.0, name: 'Difícil' }
+            easy: { time: 6.0, name: 'Normal' },
+            medium: { time: 4.5, name: 'Intenso' },
+            hard: { time: 3.0, name: 'Rush Hub' }
         };
 
         let currentDiff = 'easy';
         let score = 0;
-        let highscore = localStorage.getItem('logistics_highscore') || 0;
-        let currentBox = null;
+        let highscore = localStorage.getItem('logistics_hub_highscore') || 0;
+        let currentCargo = null;
+        let currentStep = 1; // 1: Precisa bipar Rend, 2: Precisa bipar Hend, 3: Precisa colocar na Manga
         let timerInterval = null;
         let timeLeft = 0;
         let totalTime = 0;
         let isPlaying = false;
 
-        // Inicialização de UI
-        document.getElementById('menu-highscore').innerText = highscore + ' pts';
+        document.getElementById('menu-highscore').innerText = highscore + ' volumes';
 
-        function setDifficulty(diff) {
+        // Montar botões de canalização na interface
+        const chutesGrid = document.getElementById('chutes-container');
+        chutesList.forEach(chute => {
+            const btn = document.createElement('button');
+            btn.className = 'chute-btn';
+            btn.innerHTML = `<span class="chute-code">${chute.id}</span><span class="chute-name">${chute.name.split(' ')[1]}</span>`;
+            btn.onclick = () => selectChute(chute.id);
+            chutesGrid.appendChild(btn);
+        });
+
+        function setDifficulty(diff, btnEl) {
             currentDiff = diff;
-            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelectorAll('#menu-screen .btn-secondary').forEach(b => b.style.background = '#30363d');
+            btnEl.style.background = 'var(--accent)';
         }
 
         function playSound(type) {
@@ -421,24 +484,30 @@
                 osc.connect(gain);
                 gain.connect(ctx.destination);
 
-                if (type === 'success') {
+                if (type === 'beep1') { // Som do Rend
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+                    osc.start(); osc.stop(ctx.currentTime + 0.08);
+                } else if (type === 'beep2') { // Som do Hend
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+                    osc.start(); osc.stop(ctx.currentTime + 0.08);
+                } else if (type === 'success') { // Sucesso na Manga
                     osc.frequency.setValueAtTime(400, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+                    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.12);
                     gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.1);
-                } else if (type === 'gameover') {
-                    osc.frequency.setValueAtTime(300, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
-                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.3);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
+                    osc.start(); osc.stop(ctx.currentTime + 0.12);
+                } else if (type === 'error') {
+                    osc.frequency.setValueAtTime(250, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+                    osc.start(); osc.stop(ctx.currentTime + 0.25);
                 }
-            } catch (e) {
-                // Áudio bloqueado ou não suportado antes da primeira interação
-            }
+            } catch(e) {}
         }
 
         function startGame() {
@@ -451,20 +520,30 @@
             document.getElementById('current-score').innerText = score;
             document.getElementById('current-high').innerText = highscore;
 
-            nextBox();
+            nextCargo();
         }
 
-        function nextBox() {
+        function nextCargo() {
             if (!isPlaying) return;
 
-            // Selecionar destino aleatório
-            const randomSector = sectors[Math.floor(Math.random() * sectors.length)];
-            currentBox = randomSector;
+            currentStep = 1;
+            updateStepUI();
 
-            document.getElementById('box-icon').innerText = currentBox.icon;
-            document.getElementById('box-dest').innerText = currentBox.name;
+            // Sorteia volume e destino (Manga)
+            const randomChute = chutesList[Math.floor(Math.random() * chutesList.length)];
+            const randomId = 'PKG-' + Math.floor(10000 + Math.random() * 90000);
+            
+            currentCargo = {
+                id: randomId,
+                chuteId: randomChute.id,
+                name: randomChute.name,
+                zone: randomChute.zone
+            };
 
-            // Configurar tempo baseado na dificuldade
+            document.getElementById('cargo-id').innerText = currentCargo.id;
+            document.getElementById('cargo-dest').innerText = `${currentCargo.chuteId} - ${currentCargo.zone}`;
+
+            // Resetar relógio do volume
             totalTime = difficulties[currentDiff].time * 1000;
             timeLeft = totalTime;
             
@@ -487,41 +566,89 @@
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    gameOver();
+                    gameOver('Estouro de tempo na linha!');
                 }
             }, 50);
         }
 
-        function checkAnswer(selectedSector) {
-            if (!isPlaying) return;
+        function updateStepUI() {
+            const stepRend = document.getElementById('step-rend');
+            const stepHend = document.getElementById('step-hend');
+            const stepChute = document.getElementById('step-chute');
+            const btnHendEl = document.getElementById('btn-hend-el');
 
-            if (selectedSector === currentBox.name) {
-                score++;
-                playSound('success');
-                document.getElementById('current-score').innerText = score;
-                nextBox();
-            } else {
-                gameOver();
+            stepRend.className = 'step-badge';
+            stepHend.className = 'step-badge';
+            stepChute.className = 'step-badge';
+
+            if (currentStep === 1) {
+                stepRend.classList.add('active');
+                btnHendEl.style.opacity = '0.5';
+            } else if (currentStep === 2) {
+                stepRend.classList.add('done');
+                stepHend.classList.add('active');
+                btnHendEl.style.opacity = '1';
+            } else if (currentStep === 3) {
+                stepRend.classList.add('done');
+                stepHend.classList.add('done');
+                stepChute.classList.add('active');
             }
         }
 
-        function gameOver() {
+        function performScan(device) {
+            if (!isPlaying) return;
+
+            if (device === 'rend' && currentStep === 1) {
+                playSound('beep1');
+                currentStep = 2;
+                updateStepUI();
+            } else if (device === 'hend' && currentStep === 2) {
+                playSound('beep2');
+                currentStep = 3;
+                updateStepUI();
+            } else {
+                playSound('error');
+                gameOver('Ordem de bipagem incorreta!');
+            }
+        }
+
+        function selectChute(selectedChuteId) {
+            if (!isPlaying) return;
+
+            if (currentStep !== 3) {
+                playSound('error');
+                gameOver('Tentativa de despacho sem bipedgem completa (Rend/Hend)!');
+                return;
+            }
+
+            if (selectedChuteId === currentCargo.chuteId) {
+                score++;
+                playSound('success');
+                document.getElementById('current-score').innerText = score;
+                nextCargo();
+            } else {
+                playSound('error');
+                gameOver('Volume depositado na manga errada!');
+            }
+        }
+
+        function gameOver(reason) {
             isPlaying = false;
             clearInterval(timerInterval);
-            playSound('gameover');
 
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('gameover-screen').classList.remove('hidden');
+            document.getElementById('gameover-title').innerText = reason;
             document.getElementById('final-score').innerText = score;
 
             let recordMsg = '';
             if (score > highscore) {
                 highscore = score;
-                localStorage.setItem('logistics_highscore', highscore);
-                document.getElementById('menu-highscore').innerText = highscore + ' pts';
-                recordMsg = '🎉 Novo Recorde!';
+                localStorage.setItem('logistics_hub_highscore', highscore);
+                document.getElementById('menu-highscore').innerText = highscore + ' volumes';
+                recordMsg = '🎉 Novo Recorde no Hub!';
             } else {
-                recordMsg = `Recorde atual: ${highscore}`;
+                recordMsg = `Recorde atual: ${highscore} volumes`;
             }
             document.getElementById('final-record-msg').innerText = recordMsg;
         }
@@ -533,3 +660,5 @@
     </script>
 </body>
 </html>
+
+```
