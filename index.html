@@ -1,352 +1,1142 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris do Estoque</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --panel-color: #1e293b;
-            --accent-color: #38bdf8;
-            --text-color: #f8fafc;
-            --box-color: #f59e0b;
-            --box-hover: #fbbf24;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Tetris do Estoque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1c1f24;
+    --bg-2:#15171b;
+    --panel:#262a31;
+    --panel-2:#2e333b;
+    --panel-line:#3a4048;
+    --concrete:#b9b3a3;
+    --concrete-line:#9d967f;
+    --concrete-shadow:#8a836d;
+    --hazard-yellow:#ffc530;
+    --hazard-yellow-dim:#e0ac26;
+    --hazard-black:#191a19;
+    --steel-blue:#5484b3;
+    --ink:#f4f1ea;
+    --ink-dim:#a9aeb5;
+    --danger:#d1573a;
+    --success:#5fa66c;
+    --radius-sm:4px;
+    --radius-md:8px;
+    --font-display:'Archivo Black', sans-serif;
+    --font-body:'IBM Plex Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font-family:inherit;}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+  /* ---------------- layout shell ---------------- */
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+  #app{
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
 
-        header h1 {
-            font-size: 1.8rem;
-            color: var(--accent-color);
-            margin-bottom: 5px;
-        }
+  header.topbar{
+    background:var(--bg-2);
+    padding:14px 20px 12px;
+    position:relative;
+    border-bottom:6px solid transparent;
+    border-image: repeating-linear-gradient(135deg, var(--hazard-yellow) 0 14px, var(--hazard-black) 14px 28px) 6;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px 24px;
+  }
 
-        header p {
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand h1{
+    font-family:var(--font-display);
+    font-size:20px;
+    letter-spacing:0.5px;
+    margin:0;
+    color:var(--hazard-yellow);
+    line-height:1;
+  }
+  .brand .tag{
+    font-size:12px;
+    color:var(--ink-dim);
+  }
 
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            max-width: 600px;
-        }
+  .hud{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    align-items:center;
+    font-size:13px;
+  }
+  .hud .stat{
+    display:flex;
+    flex-direction:column;
+    line-height:1.15;
+  }
+  .hud .stat .num{
+    font-family:var(--font-mono);
+    font-size:17px;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .hud .stat .lbl{
+    color:var(--ink-dim);
+    font-size:11px;
+  }
+  .hud .stat.time .num.warn{ color:var(--danger); }
+  .hud .stars{ font-size:15px; letter-spacing:1px; }
 
-        @media (min-width: 768px) {
-            .game-container {
-                flex-direction: row;
-                align-items: flex-start;
-                max-width: 900px;
-            }
-        }
+  main.floor{
+    flex:1;
+    display:flex;
+    gap:16px;
+    padding:16px;
+    align-items:flex-start;
+    justify-content:center;
+  }
 
-        .sidebar {
-            background-color: var(--panel-color);
-            padding: 20px;
-            border-radius: 12px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+  /* ---------------- warehouse grid ---------------- */
 
-        .warehouse {
-            background-color: var(--panel-color);
-            padding: 20px;
-            border-radius: 12px;
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+  .warehouse-wrap{
+    background:var(--panel);
+    border-radius:var(--radius-md);
+    padding:14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
 
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1rem;
-            font-weight: bold;
-        }
+  #warehouseGrid{
+    position:relative;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 1px, rgba(0,0,0,0.08) 1px 2px),
+      var(--concrete);
+    border-radius:3px;
+    outline: 5px solid var(--hazard-black);
+    box-shadow: 0 0 0 3px var(--hazard-yellow) inset;
+    touch-action:none;
+    overflow:hidden;
+  }
 
-        .queue-area {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            min-height: 100px;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            justify-content: center;
-        }
+  .cell{
+    position:absolute;
+    border:1px solid var(--concrete-line);
+    box-sizing:border-box;
+  }
+  .cell.blocked{
+    background:
+      repeating-linear-gradient(45deg, #4b4b48 0 6px, #35342f 6px 12px);
+    border-color:#2b2a26;
+  }
+  .cell.preview-ok{ background: rgba(95,166,108,0.55); }
+  .cell.preview-bad{ background: rgba(209,87,58,0.55); }
 
-        /* Grid do Estoque */
-        #grid {
-            display: grid;
-            grid-template-columns: repeat(10, 35px);
-            grid-template-rows: repeat(10, 35px);
-            gap: 2px;
-            background-color: #334155;
-            padding: 4px;
-            border-radius: 8px;
-        }
+  .placed-box, .ghost-box{
+    position:absolute;
+    border-radius:3px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25), inset 0 0 0 1px rgba(0,0,0,0.15);
+  }
+  .box-face{
+    position:absolute; inset:2px;
+    border-radius:2px;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 3px, transparent 3px 9px);
+  }
+  .box-tape{
+    position:absolute;
+    left:2px; right:2px; top:44%; height:12%;
+    opacity:0.85;
+  }
+  .box-tape.vert{
+    position:absolute;
+    top:2px; bottom:2px; left:44%; width:12%;
+    height:auto;
+  }
+  .box-dim-label{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:11px;
+    color:rgba(0,0,0,0.45);
+    pointer-events:none;
+  }
 
-        .cell {
-            background-color: #1e293b;
-            width: 35px;
-            height: 35px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
+  .ghost-box{
+    position:fixed;
+    pointer-events:none;
+    z-index:50;
+    opacity:0.92;
+    transform:translate(-50%,-50%);
+  }
 
-        .cell.occupied {
-            background-color: var(--box-color);
-        }
+  @keyframes shakeGrid{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-6px); }
+    40%{ transform:translateX(5px); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(3px); }
+  }
+  #warehouseGrid.shake{ animation: shakeGrid 320ms ease; }
 
-        .cell.highlight {
-            background-color: rgba(56, 189, 248, 0.4);
-        }
+  /* ---------------- sidebar ---------------- */
 
-        /* Caixa arrastável / selecionável */
-        .box-item {
-            background-color: var(--box-color);
-            color: #000;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            cursor: grab;
-            user-select: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
+  .sidebar{
+    width:250px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .panel{
+    background:var(--panel);
+    border-radius:var(--radius-md);
+    padding:14px;
+  }
+  .panel h2{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:12px;
+    text-transform:none;
+    letter-spacing:0.2px;
+    margin:0 0 10px;
+    color:var(--ink-dim);
+    border-bottom:1px solid var(--panel-line);
+    padding-bottom:8px;
+  }
 
-        .box-item:active {
-            cursor: grabbing;
-            transform: scale(0.95);
-        }
+  .active-slot{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--panel-2);
+    border-radius:var(--radius-sm);
+    min-height:110px;
+    position:relative;
+    padding:10px;
+  }
+  #activeBoxEl{
+    position:relative;
+    cursor:grab;
+    touch-action:none;
+  }
+  #activeBoxEl:active{ cursor:grabbing; }
+  #activeBoxEl.dragging-source{ opacity:0.25; }
 
-        .controls-hint {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            text-align: center;
-            margin-top: 10px;
-        }
+  .urgent-badge{
+    position:absolute;
+    top:-8px; right:-8px;
+    background:var(--danger);
+    color:#fff;
+    font-family:var(--font-mono);
+    font-size:11px;
+    padding:3px 6px;
+    border-radius:10px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.4);
+  }
 
-        button {
-            background-color: var(--accent-color);
-            color: #0f172a;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: filter 0.2s;
-        }
+  .controls-row{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+  }
+  .btn{
+    border:none;
+    border-radius:var(--radius-sm);
+    padding:10px 14px;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    justify-content:center;
+  }
+  .btn-primary{ background:var(--hazard-yellow); color:#22201a; flex:1;}
+  .btn-primary:hover{ background:var(--hazard-yellow-dim); }
+  .btn-ghost{ background:var(--panel-2); color:var(--ink); border:1px solid var(--panel-line); }
+  .btn-ghost:hover{ background:var(--panel-line); }
+  .btn-danger{ background:var(--danger); color:#fff; }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
 
-        button:hover {
-            filter: brightness(1.1);
-        }
-    </style>
+  .queue-row{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding-bottom:2px;
+  }
+  .queue-item{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .queue-thumb{
+    position:relative;
+    background:var(--panel-2);
+    border-radius:var(--radius-sm);
+  }
+  .queue-thumb .box-face-mini{ position:absolute; inset:0; border-radius:2px; }
+  .queue-label{ font-size:10px; color:var(--ink-dim); font-family:var(--font-mono); }
+
+  .howto{
+    font-size:12px;
+    color:var(--ink-dim);
+    line-height:1.5;
+  }
+  .howto b{ color:var(--ink); }
+
+  /* ---------------- overlays ---------------- */
+
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(10,11,13,0.78);
+    display:flex; align-items:center; justify-content:center;
+    z-index:200;
+    padding:20px;
+  }
+  .overlay.hidden{ display:none; }
+  .modal{
+    background:var(--panel);
+    border-radius:var(--radius-md);
+    max-width:380px;
+    width:100%;
+    padding:26px 24px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    border-top:5px solid var(--hazard-yellow);
+  }
+  .modal h2{
+    font-family:var(--font-display);
+    font-size:19px;
+    color:var(--ink);
+    margin:0 0 6px;
+  }
+  .modal p.sub{ color:var(--ink-dim); font-size:13px; margin:0 0 16px;}
+  .modal .stars-big{ font-size:34px; letter-spacing:6px; margin:6px 0 18px;}
+  .breakdown{
+    text-align:left;
+    background:var(--panel-2);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    font-size:13px;
+    margin-bottom:18px;
+  }
+  .breakdown .row{ display:flex; justify-content:space-between; padding:3px 0; }
+  .breakdown .row.total{ border-top:1px solid var(--panel-line); margin-top:6px; padding-top:8px; font-weight:600; }
+  .breakdown .row span:last-child{ font-family:var(--font-mono); }
+
+  .modal .actions{ display:flex; gap:10px; }
+
+  .score-pop{
+    position:absolute;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:14px;
+    pointer-events:none;
+    animation: floatUp 900ms ease-out forwards;
+    z-index:60;
+  }
+  .score-pop.bad{ color:var(--danger); }
+  .score-pop.good{ color:var(--success); }
+  @keyframes floatUp{
+    0%{ transform:translate(-50%,-50%); opacity:1; }
+    100%{ transform:translate(-50%,-160%); opacity:0; }
+  }
+
+  @keyframes pulseUrgent{
+    0%,100%{ box-shadow:0 0 0 0 rgba(209,87,58,0.7); }
+    50%{ box-shadow:0 0 0 6px rgba(209,87,58,0); }
+  }
+  .is-urgent{ animation: pulseUrgent 1.1s infinite; }
+
+  @media (max-width: 760px){
+    main.floor{ flex-direction:column-reverse; padding:10px; gap:10px; }
+    .sidebar{ width:100%; flex-direction:row; flex-wrap:wrap; }
+    .sidebar .panel{ flex:1 1 100%; }
+    header.topbar{ padding:10px 12px 10px; }
+    .hud{ font-size:12px; gap:12px; }
+    .warehouse-wrap{ padding:8px; width:100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .is-urgent{ animation:none; }
+    .score-pop{ animation:none; opacity:0; }
+  }
+</style>
 </head>
 <body>
+<div id="app">
 
-    <header>
-        <h1>📦 Tetris do Estoque</h1>
-        <p>Organize o armazém com eficiência e velocidade!</p>
-    </header>
+  <header class="topbar">
+    <div class="brand">
+      <h1>📦 TETRIS DO ESTOQUE</h1>
+      <span class="tag">jogo de logística de armazém</span>
+    </div>
+    <div class="hud">
+      <div class="stat"><span class="num" id="hudLevel">1</span><span class="lbl">fase</span></div>
+      <div class="stat"><span class="num" id="hudScore">0</span><span class="lbl">pontuação</span></div>
+      <div class="stat"><span class="num" id="hudBest">0</span><span class="lbl">recorde</span></div>
+      <div class="stat time"><span class="num" id="hudTime">—</span><span class="lbl" id="hudTimeLbl">tempo</span></div>
+    </div>
+  </header>
 
-    <div class="game-container">
-        <!-- Painel de Controle e Fila -->
-        <div class="sidebar">
-            <div class="stats">
-                <span>Fase: <strong id="level">1</strong></span>
-                <span>Pontos: <strong id="score">0</strong></span>
-            </div>
-            
-            <p>Próximas Caixas:</p>
-            <div class="queue-area" id="queue">
-                <!-- Caixas geradas via JS -->
-            </div>
-
-            <button id="rotate-btn">🔄 Girar Caixa (R)</button>
-            <div class="controls-hint">Clique em uma caixa da fila e depois clique no grid para posicionar. Pressione R para rotacionar.</div>
-        </div>
-
-        <!-- Área do Armazém -->
-        <div class="warehouse">
-            <div style="margin-bottom: 10px; font-weight: bold;">Área de Armazenagem (10x10)</div>
-            <div id="grid"></div>
-        </div>
+  <main class="floor">
+    <div class="warehouse-wrap">
+      <div id="warehouseGrid"></div>
     </div>
 
-    <script>
-        const GRID_SIZE = 10;
-        let score = 0;
-        let currentLevel = 1;
-        let selectedBox = null;
+    <div class="sidebar">
+      <div class="panel">
+        <h2>Caixa atual</h2>
+        <div class="active-slot">
+          <div id="activeBoxEl"></div>
+        </div>
+        <div class="controls-row">
+          <button class="btn btn-primary" id="rotateBtn">🔄 Girar</button>
+        </div>
+      </div>
 
-        // Representação do Grid (0 = vazio, 1 = ocupado)
-        let gridData = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+      <div class="panel">
+        <h2>Próximas caixas</h2>
+        <div class="queue-row" id="queueRow"></div>
+      </div>
 
-        // Exemplo de formatos de caixas (Matrizes)
-        const boxTypes = [
-            { id: 1, name: "P", shape: [[1]] },                     // 1x1
-            { id: 2, name: "M", shape: [[1, 1], [1, 1]] },         // 2x2
-            { id: 3, name: "L", shape: [[1, 1, 1]] },               // 1x3 horizontal
-            { id: 4, name: "V", shape: [[1], [1], [1]] }            // 3x1 vertical
-        ];
+      <div class="panel howto">
+        <p style="margin:0"><b>Como jogar:</b> arraste a caixa até o estoque e solte para encaixar. Toque na caixa sem arrastar (ou aperte “Girar”) para girá-la antes de posicionar.</p>
+      </div>
+    </div>
+  </main>
+</div>
 
-        let activeBox = null;
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <h2>Bem-vindo ao estoque</h2>
+    <p class="sub">Organize as caixas recebidas sem desperdiçar espaço. Fases ficam mais difíceis à medida que você avança.</p>
+    <div class="breakdown">
+      <div class="row"><span>Caixa encaixada</span><span>+100</span></div>
+      <div class="row"><span>Bom aproveitamento</span><span>bônus</span></div>
+      <div class="row"><span>Concluir rápido</span><span>bônus</span></div>
+      <div class="row"><span>Fora do estoque</span><span>penalidade</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="startBtn">Iniciar jogo</button>
+    </div>
+  </div>
+</div>
 
-        const gridElement = document.getElementById('grid');
-        const queueElement = document.getElementById('queue');
-        const scoreElement = document.getElementById('score');
-        const levelElement = document.getElementById('level');
+<div class="overlay hidden" id="resultOverlay">
+  <div class="modal">
+    <h2 id="resultTitle">Fase concluída!</h2>
+    <p class="sub" id="resultSub">Estoque organizado com sucesso.</p>
+    <div class="stars-big" id="resultStars">★★★</div>
+    <div class="breakdown" id="resultBreakdown"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="retryBtn">Repetir fase</button>
+      <button class="btn btn-primary" id="nextBtn">Próxima fase</button>
+    </div>
+  </div>
+</div>
 
-        // Inicializar Grid Visual
-        function initGrid() {
-            gridElement.innerHTML = '';
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = r;
-                    cell.dataset.col = c;
+<script>
+/* ============================================================
+   MOTOR DO JOGO (lógica pura, sem DOM)
+   ============================================================ */
+var Engine = (function () {
+  "use strict";
 
-                    cell.addEventListener('click', () => handleCellClick(r, c));
-                    gridElement.appendChild(cell);
-                }
-            }
-        }
+  var CARDBOARD_TONES = [
+    { base: "#c99a63", dark: "#a97c46", tape: "#e3c391" },
+    { base: "#bb8a56", dark: "#9b6d3c", tape: "#dbb47c" },
+    { base: "#a97b4d", dark: "#8a5f37", tape: "#cfa76c" },
+    { base: "#d4a76f", dark: "#b0854f", tape: "#eccd9c" },
+    { base: "#b58657", dark: "#946a41", tape: "#d6ac7a" }
+  ];
+  var URGENT_TONE = { base: "#c1502e", dark: "#973d22", tape: "#f0a97e" };
+  var LS_KEY = "tetrisEstoque.v1";
 
-        // Gerar Fila de Caixas
-        function generateQueue() {
-            queueElement.innerHTML = '';
-            // Gera 3 caixas aleatórias para a fila
-            for (let i = 0; i < 3; i++) {
-                const randomBox = boxTypes[Math.floor(Math.random() * boxTypes.length)];
-                const boxDiv = document.createElement('div');
-                boxDiv.classList.add('box-item');
-                boxDiv.innerText = randomBox.name;
-                boxDiv.style.width = `${randomBox.shape[0].length * 30}px`;
-                boxDiv.style.height = `${randomBox.shape.length * 30}px`;
-                
-                boxDiv.addEventListener('click', () => {
-                    activeBox = JSON.parse(JSON.stringify(randomBox)); // Cópia
-                    document.querySelectorAll('.box-item').forEach(el => el.style.border = 'none');
-                    boxDiv.style.border = '2px solid #38bdf8';
-                });
+  function freshState() {
+    return {
+      level: 1, score: 0, best: 0, bestLevel: 1,
+      cols: 8, rows: 6, grid: [], queue: [], placed: [],
+      boxesRequired: 0, boxesPlacedCount: 0,
+      timeLimitMs: null, timeLeftMs: null, elapsedMs: 0,
+      phaseStartedAt: 0, phaseActive: false,
+      nextBoxSeq: 1, urgentDeadlines: {}
+    };
+  }
 
-                queueElement.appendChild(boxDiv);
-            }
-        }
+  function loadBest() {
+    try {
+      var raw = window.localStorage.getItem(LS_KEY);
+      if (!raw) return { best: 0, bestLevel: 1 };
+      var p = JSON.parse(raw);
+      return { best: p.best || 0, bestLevel: p.bestLevel || 1 };
+    } catch (e) { return { best: 0, bestLevel: 1 }; }
+  }
 
-        // Lidar com o clique no grid para posicionar a caixa
-        function handleCellClick(row, col) {
-            if (!activeBox) return;
+  function saveBest(state) {
+    try {
+      window.localStorage.setItem(LS_KEY, JSON.stringify({ best: state.best, bestLevel: state.bestLevel }));
+    } catch (e) { /* ignore */ }
+  }
 
-            const shape = activeBox.shape;
-            const rows = shape.length;
-            const cols = shape[0].length;
+  function shapePoolForLevel(level) {
+    var pool = [[1,1],[1,2],[2,1],[1,3],[3,1]];
+    if (level >= 5) pool = pool.concat([[2,2],[2,3],[3,2]]);
+    if (level >= 10) pool = pool.concat([[1,4],[4,1],[3,3]]);
+    if (level >= 20) pool = pool.concat([[2,4],[4,2]]);
+    return pool;
+  }
 
-            // Verificar se cabe no grid
-            if (row + rows > GRID_SIZE || col + cols > GRID_SIZE) {
-                alert("A caixa não cabe aqui!");
-                return;
-            }
+  function gridSizeForLevel(level) {
+    var cols = 10 - Math.floor(level / 8);
+    var rows = 8 - Math.floor(level / 10);
+    cols = Math.max(6, Math.min(10, cols));
+    rows = Math.max(5, Math.min(8, rows));
+    return { cols: cols, rows: rows };
+  }
 
-            // Verificar colisão
-            let collision = false;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (shape[r][c] === 1 && gridData[row + r][col + c] === 1) {
-                        collision = true;
-                    }
-                }
-            }
+  function timeLimitForLevel(level) {
+    if (level < 10) return null;
+    return Math.max(30000, 90000 - (level - 10) * 2000);
+  }
 
-            if (collision) {
-                alert("Espaço já ocupado!");
-                return;
-            }
+  function boxesRequiredForLevel(level) {
+    return Math.min(12, 5 + Math.floor(level / 2));
+  }
 
-            // Posicionar no grid de dados
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (shape[r][c] === 1) {
-                        gridData[row + r][col + c] = 1;
-                    }
-                }
-            }
+  function toneForIndex(idx) { return CARDBOARD_TONES[idx % CARDBOARD_TONES.length]; }
 
-            score += 100;
-            scoreElement.innerText = score;
-            activeBox = null;
-            updateGridVisual();
-            generateQueue();
-        }
+  function makeBox(state, level) {
+    var pool = shapePoolForLevel(level);
+    var shape = pool[Math.floor(Math.random() * pool.length)];
+    var isUrgent = level >= 20 && (state.nextBoxSeq % 4 === 0);
+    var box = {
+      id: "b" + state.nextBoxSeq++,
+      w: shape[0], h: shape[1],
+      urgent: !!isUrgent,
+      tone: isUrgent ? URGENT_TONE : toneForIndex(state.nextBoxSeq)
+    };
+    return box;
+  }
 
-        // Atualizar visual do grid com base na matriz de dados
-        function updateGridVisual() {
-            const cells = gridElement.children;
-            for (let r = 0; r < GRID_SIZE; r++) {
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    const index = r * GRID_SIZE + c;
-                    if (gridData[r][c] === 1) {
-                        cells[index].classList.add('occupied');
-                    } else {
-                        cells[index].classList.remove('occupied');
-                    }
-                }
-            }
-        }
+  function applyObstacles(state, level) {
+    if (level < 20) return;
+    var count = Math.round(state.cols * state.rows * 0.08);
+    var tries = 0;
+    while (count > 0 && tries < 300) {
+      tries++;
+      var r = Math.floor(Math.random() * state.rows);
+      var c = Math.floor(Math.random() * state.cols);
+      if (state.grid[r][c] === null) { state.grid[r][c] = "blocked"; count--; }
+    }
+  }
 
-        // Girar caixa ativa
-        document.getElementById('rotate-btn').addEventListener('click', () => {
-            if (!activeBox) return;
-            const shape = activeBox.shape;
-            const rows = shape.length;
-            const cols = shape[0].length;
-            
-            let rotated = Array(cols).fill(0).map(() => Array(rows).fill(0));
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    rotated[c][rows - 1 - r] = shape[r][c];
-                }
-            }
-            activeBox.shape = rotated;
-            alert("Caixa rotacionada!");
-        });
+  function startLevel(state, level) {
+    var size = gridSizeForLevel(level);
+    state.level = level;
+    state.cols = size.cols;
+    state.rows = size.rows;
+    state.grid = [];
+    for (var r = 0; r < state.rows; r++) {
+      var row = [];
+      for (var c = 0; c < state.cols; c++) row.push(null);
+      state.grid.push(row);
+    }
+    applyObstacles(state, level);
 
-        // Inicialização
-        initGrid();
-        generateQueue();
-    </script>
+    state.placed = [];
+    state.boxesRequired = boxesRequiredForLevel(level);
+    state.boxesPlacedCount = 0;
+    state.queue = [];
+    var initialQueue = Math.min(4, state.boxesRequired);
+    for (var i = 0; i < initialQueue; i++) state.queue.push(makeBox(state, level));
+
+    state.timeLimitMs = timeLimitForLevel(level);
+    state.timeLeftMs = state.timeLimitMs;
+    state.elapsedMs = 0;
+    state.phaseStartedAt = Date.now();
+    state.phaseActive = true;
+    state.urgentDeadlines = {};
+    state.queue.forEach(function (b) {
+      if (b.urgent) state.urgentDeadlines[b.id] = Date.now() + 15000;
+    });
+  }
+
+  function canPlace(state, box, row, col) {
+    if (row < 0 || col < 0) return false;
+    if (row + box.h > state.rows) return false;
+    if (col + box.w > state.cols) return false;
+    for (var r = row; r < row + box.h; r++) {
+      for (var c = col; c < col + box.w; c++) {
+        if (state.grid[r][c] !== null) return false;
+      }
+    }
+    return true;
+  }
+
+  function commitPlacement(state, box, row, col) {
+    for (var r = row; r < row + box.h; r++) {
+      for (var c = col; c < col + box.w; c++) state.grid[r][c] = box.id;
+    }
+    state.placed.push({ id: box.id, row: row, col: col, w: box.w, h: box.h, tone: box.tone });
+    state.boxesPlacedCount++;
+
+    var gained = 100;
+    var wasUrgentOnTime = null;
+    if (box.urgent) {
+      var deadline = state.urgentDeadlines[box.id];
+      if (deadline && Date.now() <= deadline) { gained += 150; wasUrgentOnTime = true; }
+      else { gained -= 30; wasUrgentOnTime = false; }
+      delete state.urgentDeadlines[box.id];
+    }
+    state.score = Math.max(0, state.score + gained);
+
+    var idx = -1;
+    for (var i = 0; i < state.queue.length; i++) { if (state.queue[i].id === box.id) { idx = i; break; } }
+    if (idx !== -1) state.queue.splice(idx, 1);
+
+    if (state.boxesPlacedCount + state.queue.length < state.boxesRequired) {
+      var nb = makeBox(state, state.level);
+      state.queue.push(nb);
+      if (nb.urgent) state.urgentDeadlines[nb.id] = Date.now() + 15000;
+    }
+
+    return { gained: gained, wasUrgentOnTime: wasUrgentOnTime };
+  }
+
+  function invalidPlacementPenalty(state) {
+    state.score = Math.max(0, state.score - 20);
+    return -20;
+  }
+
+  function expireUrgentBox(state, boxId) {
+    state.score = Math.max(0, state.score - 30);
+    delete state.urgentDeadlines[boxId];
+    for (var i = 0; i < state.queue.length; i++) {
+      if (state.queue[i].id === boxId) {
+        state.queue[i].urgent = false;
+        state.queue[i].tone = toneForIndex(i + 3);
+        break;
+      }
+    }
+  }
+
+  function fillPercentage(state) {
+    var total = state.cols * state.rows, blocked = 0, filled = 0;
+    for (var r = 0; r < state.rows; r++) {
+      for (var c = 0; c < state.cols; c++) {
+        var v = state.grid[r][c];
+        if (v === "blocked") blocked++; else if (v !== null) filled++;
+      }
+    }
+    var usable = total - blocked;
+    return usable <= 0 ? 0 : filled / usable;
+  }
+
+  function starsForResult(pct, completed) {
+    if (!completed) return pct >= 0.3 ? 1 : 0;
+    if (pct >= 0.85) return 3;
+    if (pct >= 0.55) return 2;
+    return 1;
+  }
+
+  function finishPhase(state, completed) {
+    state.phaseActive = false;
+    var pct = fillPercentage(state);
+    var efficiencyBonus = Math.round(pct * 500);
+    var speedBonus = 0;
+    if (completed && state.timeLimitMs) {
+      speedBonus = Math.round((Math.max(0, state.timeLeftMs) / 1000) * 10);
+    } else if (completed && !state.timeLimitMs) {
+      var elapsedSec = state.elapsedMs / 1000;
+      speedBonus = Math.max(0, Math.round(200 - elapsedSec * 2));
+    }
+    var completionBonus = completed ? 500 : 0;
+    state.score += efficiencyBonus + speedBonus + completionBonus;
+    if (state.score > state.best) state.best = state.score;
+    if (completed && state.level >= state.bestLevel) state.bestLevel = state.level + 1;
+    saveBest(state);
+    return {
+      pct: pct, efficiencyBonus: efficiencyBonus, speedBonus: speedBonus,
+      completionBonus: completionBonus, stars: starsForResult(pct, completed), completed: completed
+    };
+  }
+
+  return {
+    freshState: freshState, loadBest: loadBest, saveBest: saveBest,
+    gridSizeForLevel: gridSizeForLevel, timeLimitForLevel: timeLimitForLevel,
+    boxesRequiredForLevel: boxesRequiredForLevel, makeBox: makeBox,
+    startLevel: startLevel, canPlace: canPlace, commitPlacement: commitPlacement,
+    invalidPlacementPenalty: invalidPlacementPenalty, expireUrgentBox: expireUrgentBox,
+    fillPercentage: fillPercentage, starsForResult: starsForResult, finishPhase: finishPhase
+  };
+})();
+
+/* ============================================================
+   CAMADA DE INTERFACE (DOM, arrastar/soltar, renderização)
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var state = Engine.freshState();
+  var best = Engine.loadBest();
+  state.best = best.best;
+  state.bestLevel = best.bestLevel;
+
+  var cellSize = 48;
+
+  var els = {
+    grid: document.getElementById("warehouseGrid"),
+    wrap: document.querySelector(".warehouse-wrap"),
+    activeBox: document.getElementById("activeBoxEl"),
+    queueRow: document.getElementById("queueRow"),
+    rotateBtn: document.getElementById("rotateBtn"),
+    hudLevel: document.getElementById("hudLevel"),
+    hudScore: document.getElementById("hudScore"),
+    hudBest: document.getElementById("hudBest"),
+    hudTime: document.getElementById("hudTime"),
+    hudTimeLbl: document.getElementById("hudTimeLbl"),
+    startOverlay: document.getElementById("startOverlay"),
+    startBtn: document.getElementById("startBtn"),
+    resultOverlay: document.getElementById("resultOverlay"),
+    resultTitle: document.getElementById("resultTitle"),
+    resultSub: document.getElementById("resultSub"),
+    resultStars: document.getElementById("resultStars"),
+    resultBreakdown: document.getElementById("resultBreakdown"),
+    retryBtn: document.getElementById("retryBtn"),
+    nextBtn: document.getElementById("nextBtn")
+  };
+
+  var drag = null; // { boxId, ghostEl, w, h }
+  var lastResultCompleted = false;
+
+  /* ---------- utilidades visuais ---------- */
+
+  function buildBoxVisual(container, w, h, tone, urgentSecondsLeft) {
+    container.innerHTML = "";
+    container.style.width = (w * cellSize) + "px";
+    container.style.height = (h * cellSize) + "px";
+    container.style.backgroundColor = tone.dark;
+
+    var face = document.createElement("div");
+    face.className = "box-face";
+    face.style.backgroundColor = tone.base;
+    container.appendChild(face);
+
+    var tape = document.createElement("div");
+    tape.className = w >= h ? "box-tape" : "box-tape vert";
+    tape.style.backgroundColor = tone.tape;
+    container.appendChild(tape);
+
+    var label = document.createElement("div");
+    label.className = "box-dim-label";
+    label.textContent = w + "×" + h;
+    container.appendChild(label);
+
+    if (typeof urgentSecondsLeft === "number") {
+      var badge = document.createElement("div");
+      badge.className = "urgent-badge";
+      badge.textContent = "⏱ " + Math.max(0, Math.ceil(urgentSecondsLeft)) + "s";
+      container.appendChild(badge);
+    }
+  }
+
+  function fmtTime(ms) {
+    if (ms == null) return "—";
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return (m > 0 ? m + ":" + (r < 10 ? "0" : "") + r : r + "s");
+  }
+
+  /* ---------- layout do grid ---------- */
+
+  function recomputeCellSize() {
+    var maxW = els.wrap.clientWidth - 28;
+    var maxH = window.innerHeight - 260;
+    var byW = Math.floor(maxW / state.cols);
+    var byH = Math.floor(maxH / state.rows);
+    cellSize = Math.max(26, Math.min(56, byW, byH));
+  }
+
+  function renderGridShell() {
+    recomputeCellSize();
+    els.grid.style.width = (state.cols * cellSize) + "px";
+    els.grid.style.height = (state.rows * cellSize) + "px";
+    els.grid.innerHTML = "";
+    for (var r = 0; r < state.rows; r++) {
+      for (var c = 0; c < state.cols; c++) {
+        var cell = document.createElement("div");
+        cell.className = "cell" + (state.grid[r][c] === "blocked" ? " blocked" : "");
+        cell.style.left = (c * cellSize) + "px";
+        cell.style.top = (r * cellSize) + "px";
+        cell.style.width = cellSize + "px";
+        cell.style.height = cellSize + "px";
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        els.grid.appendChild(cell);
+      }
+    }
+    renderPlacedBoxes();
+  }
+
+  function renderPlacedBoxes() {
+    var existing = els.grid.querySelectorAll(".placed-box");
+    for (var i = 0; i < existing.length; i++) existing[i].remove();
+    state.placed.forEach(function (p) {
+      var el = document.createElement("div");
+      el.className = "placed-box";
+      el.style.left = (p.col * cellSize) + "px";
+      el.style.top = (p.row * cellSize) + "px";
+      buildBoxVisual(el, p.w, p.h, p.tone);
+      els.grid.appendChild(el);
+    });
+  }
+
+  function clearPreview() {
+    var cells = els.grid.querySelectorAll(".cell.preview-ok, .cell.preview-bad");
+    for (var i = 0; i < cells.length; i++) cells[i].classList.remove("preview-ok", "preview-bad");
+  }
+
+  function showPreview(box, row, col) {
+    clearPreview();
+    var ok = Engine.canPlace(state, box, row, col);
+    for (var r = row; r < row + box.h; r++) {
+      for (var c = col; c < col + box.w; c++) {
+        if (r < 0 || r >= state.rows || c < 0 || c >= state.cols) continue;
+        var sel = els.grid.querySelector('.cell[data-row="' + r + '"][data-col="' + c + '"]');
+        if (sel) sel.classList.add(ok ? "preview-ok" : "preview-bad");
+      }
+    }
+    return ok;
+  }
+
+  /* ---------- fila / caixa ativa ---------- */
+
+  function renderQueueAndActive() {
+    var active = state.queue[0];
+    els.activeBox.innerHTML = "";
+    if (!active) return;
+    var secs = active.urgent ? (state.urgentDeadlines[active.id] - Date.now()) / 1000 : undefined;
+    buildBoxVisual(els.activeBox, active.w, active.h, active.tone, secs);
+    els.activeBox.classList.toggle("is-urgent", !!active.urgent);
+
+    els.queueRow.innerHTML = "";
+    for (var i = 1; i < state.queue.length; i++) {
+      var b = state.queue[i];
+      var item = document.createElement("div");
+      item.className = "queue-item";
+      var thumb = document.createElement("div");
+      thumb.className = "queue-thumb";
+      var sc = Math.min(22, Math.floor(150 / Math.max(b.w, b.h)));
+      thumb.style.width = (b.w * sc) + "px";
+      thumb.style.height = (b.h * sc) + "px";
+      thumb.style.backgroundColor = b.tone.dark;
+      var face = document.createElement("div");
+      face.className = "box-face-mini";
+      face.style.backgroundColor = b.tone.base;
+      thumb.appendChild(face);
+      var lbl = document.createElement("div");
+      lbl.className = "queue-label";
+      lbl.textContent = b.w + "×" + b.h + (b.urgent ? " ⚡" : "");
+      item.appendChild(thumb);
+      item.appendChild(lbl);
+      els.queueRow.appendChild(item);
+    }
+  }
+
+  function rotateActiveBox() {
+    if (!state.phaseActive) return;
+    var active = state.queue[0];
+    if (!active || drag) return;
+    var tmp = active.w;
+    active.w = active.h;
+    active.h = tmp;
+    renderQueueAndActive();
+  }
+
+  /* ---------- pop de pontuação ---------- */
+
+  function spawnScorePop(clientX, clientY, text, cls) {
+    var el = document.createElement("div");
+    el.className = "score-pop" + (cls ? " " + cls : "");
+    el.textContent = text;
+    el.style.left = clientX + "px";
+    el.style.top = clientY + "px";
+    el.style.position = "fixed";
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 950);
+  }
+
+  /* ---------- arrastar e soltar ---------- */
+
+  function gridPointToCell(clientX, clientY, box) {
+    var rect = els.grid.getBoundingClientRect();
+    var localX = clientX - rect.left - (box.w * cellSize) / 2;
+    var localY = clientY - rect.top - (box.h * cellSize) / 2;
+    var col = Math.round(localX / cellSize);
+    var row = Math.round(localY / cellSize);
+    return { row: row, col: col };
+  }
+
+  function onPointerDown(ev) {
+    if (!state.phaseActive) return;
+    var active = state.queue[0];
+    if (!active) return;
+    ev.preventDefault();
+
+    var ghost = document.createElement("div");
+    ghost.className = "ghost-box";
+    buildBoxVisual(ghost, active.w, active.h, active.tone);
+    document.body.appendChild(ghost);
+    ghost.style.left = ev.clientX + "px";
+    ghost.style.top = ev.clientY + "px";
+
+    drag = { boxId: active.id, w: active.w, h: active.h, ghost: ghost, moved: false, lastTap: 0 };
+    els.activeBox.classList.add("dragging-source");
+
+    try { els.activeBox.setPointerCapture(ev.pointerId); } catch (e) {}
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
+  }
+
+  function onPointerMove(ev) {
+    if (!drag) return;
+    drag.moved = true;
+    drag.ghost.style.left = ev.clientX + "px";
+    drag.ghost.style.top = ev.clientY + "px";
+    var box = { w: drag.w, h: drag.h };
+    var cell = gridPointToCell(ev.clientX, ev.clientY, box);
+    var rect = els.grid.getBoundingClientRect();
+    var withinArea =
+      ev.clientX > rect.left - cellSize && ev.clientX < rect.right + cellSize &&
+      ev.clientY > rect.top - cellSize && ev.clientY < rect.bottom + cellSize;
+    if (withinArea) {
+      showPreview(box, cell.row, cell.col);
+    } else {
+      clearPreview();
+    }
+  }
+
+  function endDrag() {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("pointercancel", onPointerCancel);
+    if (drag && drag.ghost) drag.ghost.remove();
+    els.activeBox.classList.remove("dragging-source");
+    clearPreview();
+    drag = null;
+  }
+
+  function onPointerCancel() { endDrag(); }
+
+  function onPointerUp(ev) {
+    if (!drag) return;
+    var wasMoved = drag.moved;
+    var box = state.queue.find(function (b) { return b.id === drag.boxId; });
+    var boxW = drag.w, boxH = drag.h;
+    var clientX = ev.clientX, clientY = ev.clientY;
+    endDrag();
+
+    if (!wasMoved) {
+      // toque/clique sem arrastar => gira a caixa
+      rotateActiveBox();
+      return;
+    }
+    if (!box) return;
+
+    var cell = gridPointToCell(clientX, clientY, { w: boxW, h: boxH });
+    var rect = els.grid.getBoundingClientRect();
+    var withinArea =
+      clientX > rect.left - cellSize && clientX < rect.right + cellSize &&
+      clientY > rect.top - cellSize && clientY < rect.bottom + cellSize;
+
+    if (!withinArea) return; // soltou fora da área da barra lateral: sem penalidade, apenas cancela
+
+    var ok = Engine.canPlace(state, box, cell.row, cell.col);
+    if (ok) {
+      var res = Engine.commitPlacement(state, box, cell.row, cell.col);
+      renderPlacedBoxes();
+      renderQueueAndActive();
+      updateHud();
+      var popText = "+" + res.gained;
+      spawnScorePop(clientX, clientY, popText, res.gained >= 0 ? "good" : "bad");
+      checkPhaseEnd();
+    } else {
+      Engine.invalidPlacementPenalty(state);
+      updateHud();
+      spawnScorePop(clientX, clientY, "-20", "bad");
+      els.grid.classList.remove("shake");
+      void els.grid.offsetWidth; // reinicia a animação
+      els.grid.classList.add("shake");
+    }
+  }
+
+  els.activeBox.addEventListener("pointerdown", onPointerDown);
+  els.rotateBtn.addEventListener("click", rotateActiveBox);
+
+  window.addEventListener("keydown", function (ev) {
+    if (ev.key === "r" || ev.key === "R") rotateActiveBox();
+  });
+
+  /* ---------- relógio da fase ---------- */
+
+  var tickHandle = null;
+
+  function tick() {
+    if (!state.phaseActive) return;
+    var now = Date.now();
+    state.elapsedMs = now - state.phaseStartedAt;
+    if (state.timeLimitMs != null) {
+      state.timeLeftMs = state.timeLimitMs - state.elapsedMs;
+    }
+
+    Object.keys(state.urgentDeadlines).forEach(function (id) {
+      if (now > state.urgentDeadlines[id]) {
+        Engine.expireUrgentBox(state, id);
+        renderQueueAndActive();
+        updateHud();
+      }
+    });
+
+    updateTimeHud();
+
+    if (state.timeLimitMs != null && state.timeLeftMs <= 0) {
+      state.timeLeftMs = 0;
+      updateTimeHud();
+      openResult(false);
+      return;
+    }
+    // refresh urgent countdown label on active box periodically
+    var active = state.queue[0];
+    if (active && active.urgent) renderQueueAndActive();
+  }
+
+  function startTicking() {
+    if (tickHandle) clearInterval(tickHandle);
+    tickHandle = setInterval(tick, 250);
+  }
+
+  function updateTimeHud() {
+    if (state.timeLimitMs != null) {
+      els.hudTimeLbl.textContent = "tempo restante";
+      els.hudTime.textContent = fmtTime(state.timeLeftMs);
+      els.hudTime.classList.toggle("warn", state.timeLeftMs < 10000);
+    } else {
+      els.hudTimeLbl.textContent = "tempo decorrido";
+      els.hudTime.textContent = fmtTime(state.elapsedMs);
+      els.hudTime.classList.remove("warn");
+    }
+  }
+
+  function updateHud() {
+    els.hudLevel.textContent = state.level;
+    els.hudScore.textContent = state.score;
+    els.hudBest.textContent = state.best;
+    updateTimeHud();
+  }
+
+  /* ---------- fim de fase ---------- */
+
+  function checkPhaseEnd() {
+    if (state.boxesPlacedCount >= state.boxesRequired) {
+      openResult(true);
+    }
+  }
+
+  function starsString(n) {
+    var s = "";
+    for (var i = 0; i < 3; i++) s += (i < n ? "★" : "☆");
+    return s;
+  }
+
+  function openResult(completed) {
+    state.phaseActive = false;
+    lastResultCompleted = completed;
+    var result = Engine.finishPhase(state, completed);
+
+    els.resultTitle.textContent = completed ? "Fase concluída!" : "Tempo esgotado";
+    els.resultSub.textContent = completed
+      ? "Estoque organizado com " + Math.round(result.pct * 100) + "% de aproveitamento."
+      : "Você não encaixou todas as caixas a tempo.";
+    els.resultStars.textContent = starsString(result.stars);
+
+    els.resultBreakdown.innerHTML =
+      row("Caixas encaixadas", state.boxesPlacedCount + " / " + state.boxesRequired) +
+      row("Aproveitamento do espaço", Math.round(result.pct * 100) + "%") +
+      row("Bônus de aproveitamento", "+" + result.efficiencyBonus) +
+      row("Bônus de velocidade", "+" + result.speedBonus) +
+      row("Bônus de conclusão", "+" + result.completionBonus) +
+      row("Pontuação total", state.score, true);
+
+    els.nextBtn.disabled = !completed;
+    els.nextBtn.style.display = completed ? "" : "none";
+    els.retryBtn.textContent = completed ? "Reiniciar jogo" : "Repetir fase";
+
+    updateHud();
+    els.resultOverlay.classList.remove("hidden");
+  }
+
+  function row(label, value, isTotal) {
+    return '<div class="row' + (isTotal ? " total" : "") + '"><span>' + label + "</span><span>" + value + "</span></div>";
+  }
+
+  function closeResultAndStart(nextLevel) {
+    els.resultOverlay.classList.add("hidden");
+    Engine.startLevel(state, nextLevel);
+    renderGridShell();
+    renderQueueAndActive();
+    updateHud();
+    startTicking();
+  }
+
+  els.nextBtn.addEventListener("click", function () {
+    closeResultAndStart(state.level + 1);
+  });
+  els.retryBtn.addEventListener("click", function () {
+    if (lastResultCompleted) {
+      // reinicia o jogo do zero mantendo o recorde salvo
+      state.score = 0;
+      closeResultAndStart(1);
+    } else {
+      closeResultAndStart(state.level);
+    }
+  });
+
+  /* ---------- início ---------- */
+
+  els.startBtn.addEventListener("click", function () {
+    els.startOverlay.classList.add("hidden");
+    closeResultAndStart(1);
+  });
+
+  window.addEventListener("resize", function () {
+    if (!els.startOverlay.classList.contains("hidden")) return;
+    renderGridShell();
+  });
+
+  updateHud();
+})();
+</script>
 </body>
 </html>
